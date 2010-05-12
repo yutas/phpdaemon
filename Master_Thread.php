@@ -145,9 +145,29 @@ class Master_Thread extends Thread
     public function shutdown($signo = FALSE)
     {
         $this->shutdown = TRUE;
-        $this->waitAll($signo);
+//        $this->waitAll($signo);
 		
         exit(0);
     }
+
+
+	/* @method waitAll
+    @description Waits untill children are alive.
+    @return void
+    */
+    public function waitAll()
+    {
+        do {
+            $n = 0;
+            foreach($this->child_collection as & $col) {
+                $n+= $col->removeTerminated();
+            }
+            if (!$this->waitPid()) {
+                $this->sigwait(0, 20000);
+            }
+        }
+        while ($n > 0);
+    }
+
 	
 }

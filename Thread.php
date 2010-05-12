@@ -3,7 +3,6 @@ abstract class Thread
 {
     public $spawnid;
     public $pid;
-	protected $child_collection;
     public $shutdown = FALSE;
     public $terminated = FALSE;
 	protected $priority = 4;
@@ -236,23 +235,6 @@ abstract class Thread
     public function signal($sig)
     {
         return posix_kill($this->pid, $sig);
-    }
-    /* @method waitAll
-    @description Waits untill children are alive.
-    @return void
-    */
-    public function waitAll()
-    {
-        do {
-            $n = 0;
-            foreach($this->child_collection as & $col) {
-                $n+= $col->removeTerminated();
-            }
-            if (!$this->waitPid()) {
-                $this->sigwait(0, 20000);
-            }
-        }
-        while ($n > 0);
     }
     /* @method setproctitle
     @description Sets a title of the current process.
