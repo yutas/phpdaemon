@@ -1,5 +1,6 @@
 <?php
-class ThreadCollection
+
+class Thread_Collection
 {
     public $threads = array();
     public $waitstatus;

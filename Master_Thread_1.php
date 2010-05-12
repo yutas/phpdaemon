@@ -1,15 +1,6 @@
 <?php
-/**************************************************************************/
-/* phpDaemon
-/* ver. 0.2
-/* License: LGPL
-/* Web: http://github.com/kakserpom/phpdaemon
-/* ===========================
-/* @class Daemon_MasterThread
-/* @author kak.serpom.po.yaitsam@gmail.com
-/* @description Implementation of the master thread.
-/**************************************************************************/
-class MasterThread extends Thread
+
+class Master_Thread extends Thread
 {
     /* @method run
     @description Runtime of Master process.

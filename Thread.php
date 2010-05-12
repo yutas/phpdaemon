@@ -3,9 +3,10 @@ abstract class Thread
 {
     public $spawnid;
     public $pid;
+	protected $child_collection;
     public $shutdown = FALSE;
     public $terminated = FALSE;
-    public $collections = array();
+	protected $priority = 4;
     public static $signalsno = array(
         1,
         2,
@@ -169,6 +170,7 @@ abstract class Thread
     */
     public function sigterm()
     {
+		Daemon::log('Process got signal SIGTERM',2);
         exit(0);
     }
     /* @method sigint
@@ -177,6 +179,7 @@ abstract class Thread
     */
     public function sigint()
     {
+		Daemon::log('Process got signal SIGINT',2);
         exit(0);
     }
     /* @method sigquit
@@ -185,6 +188,7 @@ abstract class Thread
     */
     public function sigquit()
     {
+		Daemon::log('Process got signal SIGQUIT',2);
         $this->shutdown = TRUE;
     }
     /* @method sigkill
@@ -213,7 +217,7 @@ abstract class Thread
     {
         $pid = pcntl_waitpid(-1, $status, WNOHANG);
         if ($pid > 0) {
-            foreach($this->collections as & $col) {
+            foreach($this->child_collection as & $col) {
                 foreach($col->threads as $k => & $t) {
                     if ($t->pid === $pid) {
                         $t->terminated = TRUE;
@@ -234,14 +238,14 @@ abstract class Thread
         return posix_kill($this->pid, $sig);
     }
     /* @method waitAll
-    @description Waits untill a children is alive.
+    @description Waits untill children are alive.
     @return void
     */
     public function waitAll()
     {
         do {
             $n = 0;
-            foreach($this->collections as & $col) {
+            foreach($this->child_collection as & $col) {
                 $n+= $col->removeTerminated();
             }
             if (!$this->waitPid()) {
