@@ -1,7 +1,7 @@
 <?php
 
 
-abstract class Daemon_Application
+abstract class Application_Base
 {
 
 	protected $appl_settings = array();
@@ -30,7 +30,7 @@ abstract class Daemon_Application
 	public function after_runtime(){}
 
 	//инициализирует ссылку на главный процесс демона
-	public function set_master_thread(Master_Thread $master)
+	public function set_master_thread(Thread_Master $master)
 	{
 		$this->master_thread = $master;
 	}

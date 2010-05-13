@@ -1,6 +1,6 @@
 <?php
 
-class Master_Thread extends Thread
+class Thread_Master extends Thread
 {
 
 	protected $child_collection;						//коллекция дочерних процессов
@@ -87,7 +87,7 @@ class Master_Thread extends Thread
 
 
 
-	public function set_application(Daemon_Application $appl)
+	public function set_application(Application_Base $appl)
 	{
 		$this->appl = $appl;
 	}
@@ -103,7 +103,7 @@ class Master_Thread extends Thread
 	public function spawn_child($_runtime_function = FALSE,$_before_function = FALSE,$_after_function = FALSE)
 	{
 		Daemon::log('Master is spawning a child',2);
-		$thread = new Child_Thread;
+		$thread = new Thread_Child;
 		$this->child_collection->push($thread);
 		$thread->set_application($this->appl);
 		$thread->set_runtime_function($_runtime_function);

@@ -1,6 +1,6 @@
 <?php
 
-class Example_Application extends Daemon_Application
+class Application_Example extends Application_Base
 {
 	private $counter = 0;
 

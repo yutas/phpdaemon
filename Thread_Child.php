@@ -1,6 +1,6 @@
 <?php
 
-class Child_Thread extends Thread
+class Thread_Child extends Thread
 {
 	protected $appl = FALSE;							//выполняемое приложение
 	protected $priority = 4;
@@ -46,7 +46,7 @@ class Child_Thread extends Thread
     }
 
 
-	public function set_application(Daemon_Application $appl)
+	public function set_application(Application_Base $appl)
 	{
 		$this->appl = $appl;
 	}

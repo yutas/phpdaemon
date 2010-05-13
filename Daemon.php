@@ -1,10 +1,10 @@
 <?php
 
 include_once "Thread.php";
-include_once "Master_Thread.php";
-include_once "Child_Thread.php";
+include_once "Thread_Master.php";
+include_once "Thread_Child.php";
 include_once "Thread_Collection.php";
-include_once "Daemon_Application.php";
+include_once "Application_Base.php";
 
 
 /**
@@ -53,7 +53,7 @@ class Daemon
 	}
 
 	//задает исполняемое приложение
-	public static function set_application(Daemon_Application $appl)
+	public static function set_application(Application_Base $appl)
 	{
 		self::$appl = $appl;
 	}
@@ -91,7 +91,7 @@ class Daemon
         }
 
 		//создаем главный процесс
-		self::$master = new Master_Thread();
+		self::$master = new Thread_Master();
 
 		//передаем мастерскому процессу ссылку на приложение
 		self::$master->set_application(self::$appl);
