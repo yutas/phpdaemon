@@ -2,15 +2,16 @@
 <?php
 
 include_once "Daemon.php";
-include_once "Application.php";
+include_once "Example_Application.php";
 date_default_timezone_set('Europe/Minsk');
 
 //Daemon::set_name("phpdtest");
-Daemon::init();
 
 //задаем нужное выполняемое приложение
-$appl = new Application();
+$appl = new Example_Application();
 Daemon::set_application($appl);
+
+Daemon::init();
 
 //запускаем главный цикл
 Daemon::run();

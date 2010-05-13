@@ -36,7 +36,7 @@ class Daemon
 	
 	public static function init()
 	{
-		self::$args = Daemon::get_args($_SERVER['argv']);
+		self::$args = self::get_args($_SERVER['argv']);
 
 		if(self::$daemon_name === FALSE)
 		{
@@ -44,6 +44,8 @@ class Daemon
 		}
 
 		self::apply_args(self::$args['daemon']);
+
+		self::$appl->apply_settings(self::$args['appl']);
 
 		self::get_pid();
 
@@ -83,8 +85,8 @@ class Daemon
 	public static function start()
 	{
 
-		if (Daemon::$pid && posix_kill(Daemon::$pid, SIGTTIN)) {
-            Daemon::log('[START] phpDaemon with pid-file \'' . Daemon::$pidfile . '\' is running already (PID ' . Daemon::$pid . ')');
+		if (self::$pid && posix_kill(self::$pid, SIGTTIN)) {
+            self::log('[START] phpDaemon with pid-file \'' . self::$pidfile . '\' is running already (PID ' . self::$pid . ')');
             exit;
         }
 
@@ -99,7 +101,7 @@ class Daemon
 		self::$pid = self::$master->start();
 		if(-1 === self::$pid)
 		{
-			Daemon::log('could not start master');
+			self::log('could not start master');
             exit(0);
 		}
 		file_put_contents(self::$pidfile, self::$pid);
@@ -108,13 +110,13 @@ class Daemon
 
 	public static function stop($mode = 1)
 	{
-		Daemon::log('[STOP] Stoping daemon (PID ' . Daemon::$pid . ') ...');
-		$ok = Daemon::$pid && posix_kill(Daemon::$pid, $mode === 3 ? SIGINT : SIGTERM);
+		self::log('[STOP] Stoping daemon (PID ' . self::$pid . ') ...');
+		$ok = self::$pid && posix_kill(self::$pid, $mode === 3 ? SIGINT : SIGTERM);
         if (!$ok) {
-            echo '[STOP] ERROR. It seems that phpDaemon is not running' . (Daemon::$pid ? ' (PID ' . Daemon::$pid . ')' : '') . ".\n";
+            echo '[STOP] ERROR. It seems that phpDaemon is not running' . (self::$pid ? ' (PID ' . self::$pid . ')' : '') . ".\n";
         }
         
-		Daemon::$pid = 0;
+		self::$pid = 0;
 		file_put_contents(self::$pidfile, '');
 	}
 
@@ -123,36 +125,36 @@ class Daemon
 	{
 		self::$pidfile = '/var/tmp/'.self::$daemon_name.'.pid';
 		
-		if (!file_exists(Daemon::$pidfile))	//если pid-файла нет
+		if (!file_exists(self::$pidfile))	//если pid-файла нет
 		{	
-            if (!touch(Daemon::$pidfile))
+            if (!touch(self::$pidfile))
 			{
-                Daemon::log('Couldn\'t create pid-file \'' . Daemon::$pidfile . '\'.');
+                self::log('Couldn\'t create pid-file \'' . self::$pidfile . '\'.');
             }
-            Daemon::$pid = 0;
+            self::$pid = 0;
         }
-		elseif (!is_file(Daemon::$pidfile))
+		elseif (!is_file(self::$pidfile))
 		{
-            Daemon::log('Pid-file \'' . Daemon::$pidfile . '\' must be a regular file.');
-            Daemon::$pid = FALSE;
+            self::log('Pid-file \'' . self::$pidfile . '\' must be a regular file.');
+            self::$pid = FALSE;
         }
-		elseif (!is_writable(Daemon::$pidfile))
+		elseif (!is_writable(self::$pidfile))
 		{
-            Daemon::log('Pid-file \'' . Daemon::$pidfile . '\' must be writable.');
+            self::log('Pid-file \'' . self::$pidfile . '\' must be writable.');
 		}
-		elseif (!is_readable(Daemon::$pidfile))
+		elseif (!is_readable(self::$pidfile))
 		{
-            Daemon::log('Pid-file \'' . Daemon::$pidfile . '\' must be readable.');
-            Daemon::$pid = FALSE;
+            self::log('Pid-file \'' . self::$pidfile . '\' must be readable.');
+            self::$pid = FALSE;
         }
 		else
 		{
-            Daemon::$pid = (int)file_get_contents(Daemon::$pidfile);
+            self::$pid = (int)file_get_contents(self::$pidfile);
         }
 
-		if(Daemon::$pid === FALSE)
+		if(self::$pid === FALSE)
 		{
-			Daemon::log('Program exits');
+			self::log('Program exits');
 			exit();
 		}
 
@@ -162,11 +164,11 @@ class Daemon
 	public static function open_logs()
     {
 		self::$settings['logstorage'] = '/var/tmp/'.self::$daemon_name.'.log';
-		if (Daemon::$logpointer) {
-			fclose(Daemon::$logpointer);
-			Daemon::$logpointer = FALSE;
+		if (self::$logpointer) {
+			fclose(self::$logpointer);
+			self::$logpointer = FALSE;
 		}
-		Daemon::$logpointer = fopen(Daemon::$settings['logstorage'], 'a+');
+		self::$logpointer = fopen(self::$settings['logstorage'], 'a+');
     }
 
 
@@ -181,8 +183,8 @@ class Daemon
         if (self::$logs_to_stderr && defined('STDERR')) {
             fwrite(STDERR, '[PHPD] ' . $msg . "\n");
         }
-        if (Daemon::$logpointer) {
-            fwrite(Daemon::$logpointer, '[' . date('D, j M Y H:i:s', $mt[1]) . '.' . sprintf('%06d', $mt[0] * 1000000) . ' ' . date('O') . '] [PHPD] ' . $msg . "\n");
+        if (self::$logpointer) {
+            fwrite(self::$logpointer, '[' . date('D, j M Y H:i:s', $mt[1]) . '.' . sprintf('%06d', $mt[0] * 1000000) . ' ' . date('O') . '] [PHPD] ' . $msg . "\n");
         }
     }
 
@@ -282,7 +284,7 @@ class Daemon
 	public static function show_help()
 	{
 		echo "phpdaemon
-usage: " . Daemon::$daemon_name . " (start|stop|restart) ...\n
+usage: " . self::$daemon_name . " (start|stop|restart) ...\n
 \t-a  -  keep daemon alive (don't daemonize)
 \t-v  -  verbose
 \t-o  -  output logs to STDERR

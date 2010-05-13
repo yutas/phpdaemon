@@ -66,9 +66,8 @@ class Master_Thread extends Thread
             'onShutdown'
         ));
 
+		//функция приложения
 		$this->appl->before_runtime();
-
-
 
 		//самый главный цикл
         while (TRUE) {
@@ -80,9 +79,9 @@ class Master_Thread extends Thread
 				break;
 			}
         }
-
+		
+		//функция приложения
 		$this->appl->after_runtime();
-//		$this->shutdown();
     }
 
 
@@ -101,13 +100,15 @@ class Master_Thread extends Thread
     @description spawn new workers processes.
     @return boolean - success
     */
-	public function spawn_child($_function = FALSE)
+	public function spawn_child($_runtime_function = FALSE,$_before_function = FALSE,$_after_function = FALSE)
 	{
 		Daemon::log('Master is spawning a child',2);
 		$thread = new Child_Thread;
 		$this->child_collection->push($thread);
 		$thread->set_application($this->appl);
-		$thread->set_appl_function($_function);
+		$thread->set_runtime_function($_runtime_function);
+		$thread->set_before_function($_before_function);
+		$thread->set_after_function($_after_function);
 		$pid = $thread->start();
 		if (-1 === $pid) {
 			Daemon::log('could not start child');
@@ -129,7 +130,6 @@ class Master_Thread extends Thread
         if ($this->shutdown === TRUE) {
             return;
         }
-		$this->child_collection->stop();
         $this->shutdown(SIGTERM);
     }
 
@@ -143,6 +143,7 @@ class Master_Thread extends Thread
     {
 		Daemon::log('Master is getting shutdown');
         $this->shutdown = TRUE;
+		$this->child_collection->stop();
         exit(0);
     }
 

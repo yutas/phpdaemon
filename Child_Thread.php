@@ -4,7 +4,9 @@ class Child_Thread extends Thread
 {
 	protected $appl = FALSE;							//выполняемое приложение
 	protected $priority = 4;
-	protected $appl_function = FALSE;
+	protected $runtime_function = FALSE;
+	protected $before_function = FALSE;
+	protected $after_function = FALSE;
 	
     /**
 	 * @method run
@@ -13,19 +15,21 @@ class Child_Thread extends Thread
      */
     public function run()
     {
-		Daemon::log('[CHILD] starting child (PID ' . posix_getpid() . ')....');
+		Daemon::log('[START] starting child (PID ' . posix_getpid() . ')....');
         proc_nice($this->priority);
 //        register_shutdown_function(array(
 //            $this,
 //            'shutdown'
 //        ));
 		gc_enable();
-        
+
+		call_user_func($this->before_function);
+
         while (TRUE) {
 			
-			if($this->appl_function)
+			if($this->runtime_function)
 			{
-				$break = call_user_func($this->appl_function);
+				$break = call_user_func($this->runtime_function);
 			}
 
 			pcntl_signal_dispatch();
@@ -37,7 +41,8 @@ class Child_Thread extends Thread
 			}
 			
         }
-		$this->shutdown();
+
+		call_user_func($this->after_function);
     }
 
 
@@ -46,11 +51,25 @@ class Child_Thread extends Thread
 		$this->appl = $appl;
 	}
 
-	public function set_appl_function($_function)
+	public function set_runtime_function($_function)
 	{
-		$this->appl_function = $_function;
+		$this->runtime_function = $_function;
 	}
-    
+
+	public function set_before_function($_function)
+	{
+		$this->before_function = $_function;
+	}
+
+	public function set_after_function($_function)
+	{
+		$this->after_function = $_function;
+	}
+
+
+
+
+
     /* @method shutdown
     @param boolean - Hard? If hard, we shouldn't wait for graceful shutdown of the running applications.
     @description
