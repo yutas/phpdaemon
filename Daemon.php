@@ -31,6 +31,7 @@ class Daemon
 	protected static $logpointer;						//указатель на файл логов
 	protected static $args = array();
 	protected static $logs_verbose = 1;
+	protected static $logs_to_stderr = FALSE;
 
 	
 	public static function init()
@@ -112,11 +113,7 @@ class Daemon
         if (!$ok) {
             echo '[STOP] ERROR. It seems that phpDaemon is not running' . (Daemon::$pid ? ' (PID ' . Daemon::$pid . ')' : '') . ".\n";
         }
-        if ($ok && ($mode > 1)) {
-            while ($r = posix_kill(Daemon::$pid, SIGTTIN)) {
-                usleep(500000);
-            }
-        }
+        
 		Daemon::$pid = 0;
 		file_put_contents(self::$pidfile, '');
 	}
@@ -181,7 +178,7 @@ class Daemon
 		}
 		
         $mt = explode(' ', microtime());
-        if (defined('STDERR')) {
+        if (self::$logs_to_stderr && defined('STDERR')) {
             fwrite(STDERR, '[PHPD] ' . $msg . "\n");
         }
         if (Daemon::$logpointer) {
@@ -253,23 +250,31 @@ class Daemon
 			exit;
 		}
 
+		//show help
 		if(isset($_args['h']) && $_args['h'] === TRUE)
 		{
 			self::show_help();
 			exit;
 		}
 
-		//verbosity level
+		//verbose
 		if(isset($_args['v']) && $_args['v'] === TRUE)
 		{
 			self::$logs_verbose = 2;
 		}
 
-		//not daemonize
+		//don't daemonize
 		if(isset($_args['a']) && $_args['a'] === TRUE)
 		{
 			self::$daemonize = FALSE;
 		}
+
+		//outputs all logs to STDERR
+		if(isset($_args['o']) && $_args['o'] === TRUE)
+		{
+			self::$logs_to_stderr = TRUE;
+		}
+
 	}
 
 
@@ -278,7 +283,10 @@ class Daemon
 	{
 		echo "phpdaemon
 usage: " . Daemon::$daemon_name . " (start|stop|restart) ...\n
-\t-h  -  (print this help information and exit)
+\t-a  -  keep daemon alive (don't daemonize)
+\t-v  -  verbose
+\t-o  -  output logs to STDERR
+\t-h  -  print this help information and exit
   \n";
 	}
 

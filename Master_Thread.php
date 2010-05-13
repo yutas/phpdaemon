@@ -66,12 +66,23 @@ class Master_Thread extends Thread
             'onShutdown'
         ));
 
+		$this->appl->before_runtime();
+
+
+
 		//самый главный цикл
         while (TRUE) {
-			$this->appl->master_action();
-//            pcntl_signal_dispatch();
-            $this->sigwait(1,0);
+			$break = $this->appl->master_runtime();
+            pcntl_signal_dispatch();
+			$this->sigwait($this->sigwait_sec,$this->sigwait_nano);
+			if($break)
+			{
+				break;
+			}
         }
+
+		$this->appl->after_runtime();
+//		$this->shutdown();
     }
 
 
@@ -92,51 +103,37 @@ class Master_Thread extends Thread
     */
 	public function spawn_child($_function = FALSE)
 	{
+		Daemon::log('Master is spawning a child',2);
 		$thread = new Child_Thread;
 		$this->child_collection->push($thread);
 		$thread->set_application($this->appl);
 		$thread->set_appl_function($_function);
-		if (-1 === $thread->start()) {
-			Daemon::log('could not start worker');
+		$pid = $thread->start();
+		if (-1 === $pid) {
+			Daemon::log('could not start child');
 		}
-		return TRUE;
+		return $pid;
 	}
-    /* @method stopWorkers
-    @param $n - integer - number of workers to stop
-    @description stop the workers.
-    @return boolean - success
-    */
-    public function stopWorkers($n = 1)
-    {
-        $n = (int)$n;
-        $i = 0;
-        foreach($this->collections['workers']
-                ->threads as & $w) {
-            if ($i >= $n) {
-                break;
-            }
-            if ($w->shutdown) {
-                continue;
-            }
-            $w->stop();
-            ++$i;
-        }
-        return TRUE;
-    }
+	
+    
     /* @method onShutdown
     @description Called when master is going to shutdown.
     @return void
     */
     public function onShutdown()
     {
+		Daemon::log('Master function onShutdown: $this->shutdown='.var_export($this->shutdown,true).' $this->pid='.$this->pid,2);
         if ($this->pid != posix_getpid()) {
             return;
         }
         if ($this->shutdown === TRUE) {
             return;
         }
+		$this->child_collection->stop();
         $this->shutdown(SIGTERM);
     }
+
+	
     /* @method shutdown
     @param integer System singal's number.
     @description Called when master is going to shutdown.
@@ -144,30 +141,23 @@ class Master_Thread extends Thread
     */
     public function shutdown($signo = FALSE)
     {
+		Daemon::log('Master is getting shutdown');
         $this->shutdown = TRUE;
-//        $this->waitAll($signo);
-		
         exit(0);
     }
 
 
-	/* @method waitAll
-    @description Waits untill children are alive.
-    @return void
-    */
-    public function waitAll()
-    {
-        do {
-            $n = 0;
-            foreach($this->child_collection as & $col) {
-                $n+= $col->removeTerminated();
-            }
-            if (!$this->waitPid()) {
-                $this->sigwait(0, 20000);
-            }
-        }
-        while ($n > 0);
-    }
 
+
+
+    /* @method waitPid
+    @description Checks for SIGCHLD.
+    @return boolean Success.
+    */
+	public function waitPid()
+    {
+        $pid = pcntl_waitpid(-1, $status, WNOHANG);
+        return TRUE;
+    }
 	
 }

@@ -6,6 +6,8 @@ abstract class Thread
     public $shutdown = FALSE;
     public $terminated = FALSE;
 	protected $priority = 4;
+	protected $sigwait_sec = 0;
+	protected $sigwait_nano = 100000000;
     public static $signalsno = array(
         1,
         2,
@@ -169,7 +171,7 @@ abstract class Thread
     */
     public function sigterm()
     {
-		Daemon::log('Process got signal SIGTERM',2);
+		Daemon::log('Master caught SIGTERM',2);
         exit(0);
     }
     /* @method sigint
@@ -178,7 +180,7 @@ abstract class Thread
     */
     public function sigint()
     {
-		Daemon::log('Process got signal SIGINT',2);
+		Daemon::log('Master caught SIGINT',2);
         exit(0);
     }
     /* @method sigquit
@@ -187,7 +189,7 @@ abstract class Thread
     */
     public function sigquit()
     {
-		Daemon::log('Process got signal SIGQUIT',2);
+		Daemon::log('Master caught SIGQUIT',2);
         $this->shutdown = TRUE;
     }
     /* @method sigkill

@@ -2,28 +2,8 @@
 <?php
 
 include_once "Daemon.php";
+include_once "Application.php";
 date_default_timezone_set('Europe/Minsk');
-
-class Application extends Daemon_Application
-{
-	private $counter = 0;
-	
-	public function master_action()
-	{
-		echo 2;
-		if(!$this->counter)
-		{
-			$this->master_thread->spawn_child(array($this,'child_action'));
-		}
-		$this->counter++;
-	}
-
-
-	public function child_action()
-	{
-		echo 3;
-	}
-}
 
 //Daemon::set_name("phpdtest");
 Daemon::init();

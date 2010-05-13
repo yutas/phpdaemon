@@ -13,22 +13,31 @@ class Child_Thread extends Thread
      */
     public function run()
     {
-		Daemon::log('[CHILD] starting daemon child (PID ' . posix_getpid() . ')....');
+		Daemon::log('[CHILD] starting child (PID ' . posix_getpid() . ')....');
         proc_nice($this->priority);
-        register_shutdown_function(array(
-            $this,
-            'shutdown'
-        ));
+//        register_shutdown_function(array(
+//            $this,
+//            'shutdown'
+//        ));
 		gc_enable();
         
         while (TRUE) {
-            pcntl_signal_dispatch();
+			
 			if($this->appl_function)
 			{
-				call_user_func($this->appl_function);
+				$break = call_user_func($this->appl_function);
 			}
-			sleep(2);
+
+			pcntl_signal_dispatch();
+			$this->sigwait($this->sigwait_sec,$this->sigwait_nano);
+			
+			if($break)
+			{
+				break;
+			}
+			
         }
+		$this->shutdown();
     }
 
 
@@ -49,6 +58,7 @@ class Child_Thread extends Thread
     */
     public function shutdown($hard = FALSE)
     {
+		Daemon::log('Child ' . getmypid() . ' is getting shutdown',1);
         @ob_flush();
         posix_kill(posix_getppid() , SIGCHLD);
         exit(0);
@@ -61,41 +71,33 @@ class Child_Thread extends Thread
     */
     public function sigint()
     {
-//        if (Daemon::$settings['logsignals']) {
-//            Daemon::log('Worker ' . getmypid() . ' caught SIGINT.');
-//        }
+		Daemon::log('Child ' . getmypid() . ' caught SIGINT',2);
         $this->shutdown(TRUE);
     }
+
+	
     /* @method sigterm
     @description Handler of the SIGTERM (graceful shutdown) signal in worker process.
     @return void
     */
     public function sigterm()
     {
-//        if (Daemon::$settings['logsignals']) {
-//            Daemon::log('Worker ' . getmypid() . ' caught SIGTERM.');
-//        }
+		Daemon::log('Child ' . getmypid() . ' caught SIGTERM',2);
         $this->shutdown();
     }
+
+	
     /* @method sigquit
     @description Handler of the SIGQUIT (graceful shutdown) signal in worker process.
     @return void
     */
     public function sigquit()
     {
-//        if (Daemon::$settings['logsignals']) {
-//            Daemon::log('Worker ' . getmypid() . ' caught SIGQUIT.');
-//        }
+		Daemon::log('Child ' . getmypid() . ' caught SIGQUIT',2);
         $this->shutdown = TRUE;
     }
-    /* @method sigttin
-    @description Handler of the SIGTTIN signal in worker process.
-    @return void
-    */
-    public function sigttin()
-    {
-    }
-   
+
+	
     /* @method sigunknown
     @description Handler of non-known signals.
     @return void
@@ -107,6 +109,6 @@ class Child_Thread extends Thread
         } else {
             $sig = 'UNKNOWN';
         }
-        Daemon::log('Worker ' . getmypid() . ' caught signal #' . $signo . ' (' . $sig . ').');
+        Daemon::log('Child ' . getmypid() . ' caught signal #' . $signo . ' (' . $sig . ').',2);
     }
 }
