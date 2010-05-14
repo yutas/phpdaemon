@@ -8,6 +8,8 @@ abstract class Application_Base
 	protected $master_thread = FALSE;
 
 
+	public function  __construct(){}
+
 
 	//передаем параметры из командной строки
 	public function apply_settings($_appl_settings)

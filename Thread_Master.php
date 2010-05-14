@@ -100,7 +100,7 @@ class Thread_Master extends Thread
     @description spawn new workers processes.
     @return boolean - success
     */
-	public function spawn_child($_runtime_function = FALSE,$_before_function = FALSE,$_after_function = FALSE)
+	public function spawn_child($_before_function = FALSE,$_runtime_function = FALSE,$_after_function = FALSE)
 	{
 		Daemon::log('Master is spawning a child',2);
 		$thread = new Thread_Child;

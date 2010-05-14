@@ -46,21 +46,33 @@ class Thread_Child extends Thread
     }
 
 
+	/**
+	 * передаем ссылку на приложение
+	 */
 	public function set_application(Application_Base $appl)
 	{
 		$this->appl = $appl;
 	}
 
+	/**
+	 * Устанавливаем функцию, которая будет выполнятся в главном цикле
+	 */
 	public function set_runtime_function($_function)
 	{
 		$this->runtime_function = $_function;
 	}
 
+	/**
+	 * ... до главного цикла
+	 */
 	public function set_before_function($_function)
 	{
 		$this->before_function = $_function;
 	}
 
+	/**
+	 * ... после главного цикла
+	 */
 	public function set_after_function($_function)
 	{
 		$this->after_function = $_function;
