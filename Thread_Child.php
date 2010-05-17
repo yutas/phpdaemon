@@ -15,7 +15,7 @@ class Thread_Child extends Thread
      */
     public function run()
     {
-		Daemon::log('[START] starting child (PID ' . posix_getpid() . ')....');
+		self::log('[START] starting child (PID ' . posix_getpid() . ')....');
         proc_nice($this->priority);
 //        register_shutdown_function(array(
 //            $this,
@@ -23,7 +23,10 @@ class Thread_Child extends Thread
 //        ));
 		gc_enable();
 
-		call_user_func($this->before_function);
+		if( !is_null($this->before_function))
+		{
+			call_user_func($this->before_function);
+		}
 
         while (TRUE) {
 			
@@ -42,14 +45,17 @@ class Thread_Child extends Thread
 			
         }
 
-		call_user_func($this->after_function);
+		if( !is_null($this->after_function))
+		{
+			call_user_func($this->after_function);
+		}
     }
 
 
 	/**
 	 * передаем ссылку на приложение
 	 */
-	public function set_application(Application_Base $appl)
+	public function set_application($appl)
 	{
 		$this->appl = $appl;
 	}
@@ -89,7 +95,7 @@ class Thread_Child extends Thread
     */
     public function shutdown($hard = FALSE)
     {
-		Daemon::log('Child ' . getmypid() . ' is getting shutdown',1);
+		self::log(getmypid() . ' is getting shutdown',1);
         @ob_flush();
         posix_kill(posix_getppid() , SIGCHLD);
         exit(0);
@@ -102,7 +108,7 @@ class Thread_Child extends Thread
     */
     public function sigint()
     {
-		Daemon::log('Child ' . getmypid() . ' caught SIGINT',2);
+		self::log(getmypid() . ' caught SIGINT',2);
         $this->shutdown(TRUE);
     }
 
@@ -113,7 +119,7 @@ class Thread_Child extends Thread
     */
     public function sigterm()
     {
-		Daemon::log('Child ' . getmypid() . ' caught SIGTERM',2);
+		self::log(getmypid() . ' caught SIGTERM',2);
         $this->shutdown();
     }
 
@@ -124,7 +130,7 @@ class Thread_Child extends Thread
     */
     public function sigquit()
     {
-		Daemon::log('Child ' . getmypid() . ' caught SIGQUIT',2);
+		self::log(getmypid() . ' caught SIGQUIT',2);
         $this->shutdown = TRUE;
     }
 
@@ -140,6 +146,12 @@ class Thread_Child extends Thread
         } else {
             $sig = 'UNKNOWN';
         }
-        Daemon::log('Child ' . getmypid() . ' caught signal #' . $signo . ' (' . $sig . ').',2);
+        self::log(getmypid() . ' caught signal #' . $signo . ' (' . $sig . ').',2);
     }
+
+
+	public static function log($_msg,$_verbose = 1)
+	{
+		self::log_with_sender($_msg,'child',$_verbose);
+	}
 }

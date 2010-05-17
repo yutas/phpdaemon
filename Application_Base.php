@@ -36,4 +36,11 @@ abstract class Application_Base
 	{
 		$this->master_thread = $master;
 	}
+
+
+	public static function log($_msg,$_verbose = 1)
+	{
+		Daemon::log_with_sender($_msg,'appl',$_verbose);
+	}
+
 }

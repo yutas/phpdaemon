@@ -22,7 +22,7 @@ class Daemon
 	public static $pid;
 	public static $pidfile;
 	public static $runmode = FALSE;
-	public static $daemon_name = FALSE;				//имя демона
+	public static $daemon_name = FALSE;					//имя демона
 	public static $daemonize = TRUE;
 
 	protected static $master;							//класс главного процесса
@@ -45,8 +45,6 @@ class Daemon
 
 		self::apply_args(self::$args['daemon']);
 
-		self::$appl->apply_settings(self::$args['appl']);
-
 		self::get_pid();
 
 		self::open_logs();
@@ -56,12 +54,13 @@ class Daemon
 	public static function set_application(Application_Base $appl)
 	{
 		self::$appl = $appl;
+		self::$appl->apply_settings(self::$args['appl']);
 	}
 
 
 	public static function set_name($_pname = null)
 	{
-		self::$daemon_name = $_pname ? $_pname : 'phpd';
+		self::$daemon_name = strtolower($_pname ? $_pname : 'phpd');
 	}
 
 
@@ -86,7 +85,7 @@ class Daemon
 	{
 
 		if (self::$pid && posix_kill(self::$pid, SIGTTIN)) {
-            self::log('[START] phpDaemon with pid-file \'' . self::$pidfile . '\' is running already (PID ' . self::$pid . ')');
+            self::log('[START] phpd with pid-file \'' . self::$pidfile . '\' is running already (PID ' . self::$pid . ')');
             exit;
         }
 
@@ -171,9 +170,15 @@ class Daemon
 		self::$logpointer = fopen(self::$settings['logstorage'], 'a+');
     }
 
+	public static function log($_msg,$_verbose = 1)
+	{
+		self::log_with_sender($_msg,'phpd',$_verbose);
+	}
 
-	public static function log($msg,$_verbose = 1)
+
+	public static function log_with_sender($_msg,$_sender = 'nobody',$_verbose = 1)
     {
+
 		if($_verbose > self::$logs_verbose)
 		{
 			return;
@@ -181,10 +186,10 @@ class Daemon
 		
         $mt = explode(' ', microtime());
         if (self::$logs_to_stderr && defined('STDERR')) {
-            fwrite(STDERR, '[PHPD] ' . $msg . "\n");
+            fwrite(STDERR, '['.strtoupper($_sender).'] ' . $_msg . "\n");
         }
         if (self::$logpointer) {
-            fwrite(self::$logpointer, '[' . date('D, j M Y H:i:s', $mt[1]) . '.' . sprintf('%06d', $mt[0] * 1000000) . ' ' . date('O') . '] [PHPD] ' . $msg . "\n");
+            fwrite(self::$logpointer, '[' . date('D, j M Y H:i:s', $mt[1]) . '.' . sprintf('%06d', $mt[0] * 1000000) . ' ' . date('O') . '] ['.strtoupper($_sender).'] ' . $_msg . "\n");
         }
     }
 

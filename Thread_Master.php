@@ -58,7 +58,7 @@ class Thread_Master extends Thread
     */
     public function run()
     {
-		Daemon::log('[START] starting daemon (PID ' . posix_getpid() . ')....');
+		self::log('[START] starting master (PID ' . posix_getpid() . ')....');
         proc_nice($this->priority);
         gc_enable();
         register_shutdown_function(array(
@@ -102,7 +102,7 @@ class Thread_Master extends Thread
     */
 	public function spawn_child($_before_function = FALSE,$_runtime_function = FALSE,$_after_function = FALSE)
 	{
-		Daemon::log('Master is spawning a child',2);
+		self::log('Spawning a child',2);
 		$thread = new Thread_Child;
 		$this->child_collection->push($thread);
 		$thread->set_application($this->appl);
@@ -111,7 +111,7 @@ class Thread_Master extends Thread
 		$thread->set_after_function($_after_function);
 		$pid = $thread->start();
 		if (-1 === $pid) {
-			Daemon::log('could not start child');
+			self::log('Сould not start child');
 		}
 		return $pid;
 	}
@@ -123,7 +123,7 @@ class Thread_Master extends Thread
     */
     public function onShutdown()
     {
-		Daemon::log('Master function onShutdown: $this->shutdown='.var_export($this->shutdown,true).' $this->pid='.$this->pid,2);
+		self::log('Function onShutdown: $this->shutdown='.var_export($this->shutdown,true).' $this->pid='.$this->pid,2);
         if ($this->pid != posix_getpid()) {
             return;
         }
@@ -141,7 +141,7 @@ class Thread_Master extends Thread
     */
     public function shutdown($signo = FALSE)
     {
-		Daemon::log('Master is getting shutdown');
+		self::log('Getting shutdown');
         $this->shutdown = TRUE;
 		$this->child_collection->stop();
         exit(0);
@@ -160,5 +160,11 @@ class Thread_Master extends Thread
         $pid = pcntl_waitpid(-1, $status, WNOHANG);
         return TRUE;
     }
+
+
+	public static function log($_msg,$_verbose = 1)
+	{
+		Daemon::log_with_sender($_msg,'master',$_verbose);
+	}
 	
 }

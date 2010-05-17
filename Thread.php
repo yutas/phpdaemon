@@ -7,7 +7,7 @@ abstract class Thread
     public $terminated = FALSE;
 	protected $priority = 4;
 	protected $sigwait_sec = 0;
-	protected $sigwait_nano = 100000000;
+	protected $sigwait_nano = 1000;
     public static $signalsno = array(
         1,
         2,
