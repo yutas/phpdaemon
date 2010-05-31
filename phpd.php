@@ -1,17 +1,20 @@
 #!/usr/bin/php -q
 <?php
 
-include_once "Daemon.php";
-include_once "Application_Example.php";
+error_reporting(E_ALL ^E_NOTICE ^E_WARNING);
 date_default_timezone_set('Europe/Minsk');
 
-//Daemon::set_name("phpdtest");
+include_once "Daemon.php";
+include_once "Application_Example.php";
 
-//задаем нужное выполняемое приложение
+//входные параметры демона и приложения
+$settings = array('daemon' => array('sigwait_nano' => 1000000,'sigwait_sec' => 0,'name' => 'daemon') );
+
+//инициализируем параметры
+Daemon::init($settings);
+
+//инициализируем исполняемое приложение
 $appl = new Application_Example();
-Daemon::set_application($appl);
-
-Daemon::init();
 
 //запускаем главный цикл
-Daemon::run();
+Daemon::run($appl);

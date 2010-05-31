@@ -5,6 +5,7 @@ class Thread_Collection
     public $threads = array();
     public $waitstatus;
     public $spawncounter = 0;
+	
     /* @method push
     @description Pushes certain thread to the collection.
     @param object Thread to push.
@@ -16,6 +17,7 @@ class Thread_Collection
         $thread->spawnid = $this->spawncounter;
         $this->threads[$thread->spawnid] = $thread;
     }
+	
     /* @method start
     @description Starts the collected threads.
     @return void
@@ -26,6 +28,7 @@ class Thread_Collection
             $thread->start();
         }
     }
+	
     /* @method stop
     @description Stops the collected threads.
     @return void
@@ -36,33 +39,16 @@ class Thread_Collection
             $thread->stop($kill);
         }
     }
+	
     /* @method getNumber
     @description Returns a number of collected threads.
     @return integer Number.
     */
     public function getNumber()
     {
-        return sizeof($this->threads);
+        return $this->spawncounter; //sizeof($this->threads);
     }
-    /* @method removeTerminated
-    @description Removes terminated threads from the collection.
-    @param boolean Whether to check the threads using signal.
-    @return integer Number of removed threads.
-    */
-    public function removeTerminated($check = FALSE)
-    {
-        $n = 0;
-        foreach($this->threads as $k => & $t) {
-            if ($t->terminated) {
-                unset($this->threads[$k]);
-            } elseif ($check && (!$thread->signal(SIGTTIN))) {
-                unset($this->threads[$k]);
-            } else {
-                ++$n;
-            }
-        }
-        return $n;
-    }
+	
     /* @method signal
     @description Sends a signal to threads.
     @param integer Signal's number.
@@ -74,4 +60,17 @@ class Thread_Collection
             $thread->signal($sig);
         }
     }
+
+
+	/**
+	 * удаляем запись из коллекции при завершении работы дочернего процесса
+	 */
+	public function delete_spawn($_spawn_id)
+	{
+		if(intval($_spawn_id))
+		{
+			unset($this->threads[$_spawn_id]);
+			--$this->spawncounter;
+		}
+	}
 }

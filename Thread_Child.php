@@ -2,11 +2,11 @@
 
 class Thread_Child extends Thread
 {
-	protected $appl = FALSE;							//выполняемое приложение
 	protected $priority = 4;
 	protected $runtime_function = FALSE;
 	protected $before_function = FALSE;
 	protected $after_function = FALSE;
+	protected $thread_name = 'child';
 	
     /**
 	 * @method run
@@ -15,38 +15,35 @@ class Thread_Child extends Thread
      */
     public function run()
     {
-		self::log('[START] starting child (PID ' . posix_getpid() . ')....');
+		$this->log('starting child (PID ' . posix_getpid() . ')....');
         proc_nice($this->priority);
-//        register_shutdown_function(array(
-//            $this,
-//            'shutdown'
-//        ));
 		gc_enable();
 
-		if( !is_null($this->before_function))
+		if( $this->before_function !== FALSE )		//если задана функция до рабочего цикла
 		{
+			//выполняем ее
 			call_user_func($this->before_function);
 		}
 
-        while (TRUE) {
-			
-			if($this->runtime_function)
-			{
-				$break = call_user_func($this->runtime_function);
-			}
+		if( $this->runtime_function !== FALSE )		//если задана функция рабочего цикла
+		{
+			while (TRUE) {
+				if(TRUE === call_user_func($this->runtime_function))	//если функция вернула TRUE
+				{
+					//прекращаем цикл
+					break;
+				}
+				//ожидаем заданное время для получения сигнала операционной системы
+				$this->sigwait(Daemon::$settings['sigwait_sec'],Daemon::$settings['sigwait_nano']);
 
-			pcntl_signal_dispatch();
-			$this->sigwait($this->sigwait_sec,$this->sigwait_nano);
-			
-			if($break)
-			{
-				break;
+				//если сигнал был получен, вызываем связанную с ним функцию
+				pcntl_signal_dispatch();
 			}
-			
         }
 
-		if( !is_null($this->after_function))
+		if( $this->after_function !== FALSE )		//если задана функция после рабочего цикла
 		{
+			//выполняем и ее
 			call_user_func($this->after_function);
 		}
     }
@@ -57,101 +54,53 @@ class Thread_Child extends Thread
 	 */
 	public function set_application($appl)
 	{
-		$this->appl = $appl;
+		$this->appl = clone $appl;
 	}
 
-	/**
-	 * Устанавливаем функцию, которая будет выполнятся в главном цикле
-	 */
-	public function set_runtime_function($_function)
-	{
-		$this->runtime_function = $_function;
-	}
 
 	/**
-	 * ... до главного цикла
+	 * Устанавливаем функцию, которая будет выполнятся до главного цикла
 	 */
 	public function set_before_function($_function)
 	{
-		$this->before_function = $_function;
+		if(is_callable($_function))
+		{
+			$this->before_function = $_function;
+		}
 	}
+
+
+	/**
+	 * ... в главном цикле
+	 */
+	public function set_runtime_function($_function)
+	{
+		if(is_callable($_function))
+		{
+			$this->runtime_function = $_function;
+		}
+	}
+
 
 	/**
 	 * ... после главного цикла
 	 */
 	public function set_after_function($_function)
 	{
-		$this->after_function = $_function;
+		if(is_callable($_function))
+		{
+			$this->after_function = $_function;
+		}
 	}
 
-
-
-
-
-    /* @method shutdown
-    @param boolean - Hard? If hard, we shouldn't wait for graceful shutdown of the running applications.
-    @description
-    @return boolean - Ready?
-    */
-    public function shutdown($hard = FALSE)
+	/**
+	 * завершение работы
+	 */
+    public function shutdown()
     {
-		self::log(getmypid() . ' is getting shutdown',1);
-        @ob_flush();
-        posix_kill(posix_getppid() , SIGCHLD);
+		$this->log(getmypid() . ' is getting shutdown',1);
+		$this->log('Parent PID - '.posix_getppid(),2);
         exit(0);
     }
 
-	
-    /* @method sigint
-    @description Handler of the SIGINT (hard shutdown) signal in worker process.
-    @return void
-    */
-    public function sigint()
-    {
-		self::log(getmypid() . ' caught SIGINT',2);
-        $this->shutdown(TRUE);
-    }
-
-	
-    /* @method sigterm
-    @description Handler of the SIGTERM (graceful shutdown) signal in worker process.
-    @return void
-    */
-    public function sigterm()
-    {
-		self::log(getmypid() . ' caught SIGTERM',2);
-        $this->shutdown();
-    }
-
-	
-    /* @method sigquit
-    @description Handler of the SIGQUIT (graceful shutdown) signal in worker process.
-    @return void
-    */
-    public function sigquit()
-    {
-		self::log(getmypid() . ' caught SIGQUIT',2);
-        $this->shutdown = TRUE;
-    }
-
-	
-    /* @method sigunknown
-    @description Handler of non-known signals.
-    @return void
-    */
-    public function sigunknown($signo)
-    {
-        if (isset(Thread::$signals[$signo])) {
-            $sig = Thread::$signals[$signo];
-        } else {
-            $sig = 'UNKNOWN';
-        }
-        self::log(getmypid() . ' caught signal #' . $signo . ' (' . $sig . ').',2);
-    }
-
-
-	public static function log($_msg,$_verbose = 1)
-	{
-		self::log_with_sender($_msg,'child',$_verbose);
-	}
 }

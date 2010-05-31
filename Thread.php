@@ -1,13 +1,11 @@
 <?php
 abstract class Thread
 {
-    public $spawnid;
+	protected $appl = FALSE;							//выполняемое приложение
     public $pid;
-    public $shutdown = FALSE;
-    public $terminated = FALSE;
-	protected $priority = 4;
-	protected $sigwait_sec = 0;
-	protected $sigwait_nano = 1000;
+    public $shutdown = FALSE;							//флаг завершения работы
+	protected $priority = 4;							//приоритет процесса в ОС
+	protected $thread_name = 'unnamed_thread';			//имя процесса
     public static $signalsno = array(
         1,
         2,
@@ -82,19 +80,18 @@ abstract class Thread
     {
         $pid = pcntl_fork();
         if ($pid === - 1) {
-            throw new Exception('Could not fork');
+            $this->log('Could not fork');
         }
         if ($pid == 0) {
             $this->pid = posix_getpid();
             foreach(Thread::$signals as $no => $name) {
-                if (($name === 'SIGKILL') || ($name == 'SIGSTOP')) {
+				if (($name === 'SIGKILL') || ($name == 'SIGSTOP'))
+				{
                     continue;
                 }
-                if (!pcntl_signal($no, array(
-                    $this,
-                    'sighandler'
-                ) , TRUE)) {
-                    throw new Exception('Cannot assign ' . $name . ' signal');
+                if (!pcntl_signal($no, array($this,'sighandler') , TRUE))
+				{
+                    $this->log('Cannot assign ' . $name . ' signal');
                 }
             }
             $this->run();
@@ -110,15 +107,15 @@ abstract class Thread
     */
     public function sighandler($signo)
     {
-        if (is_callable($c = array(
-            $this,
-            strtolower(Thread::$signals[$signo])
-        ))) {
+		$this->log('sighandler of process '.getmypid().' caught '.Thread::$signals[$signo],2);
+        if( is_callable($c = array($this,strtolower(Thread::$signals[$signo]))) )
+		{
+			$this->log('sighandler '.getmypid().' calling function '.strtolower(Thread::$signals[$signo]).'()',2);
             call_user_func($c);
-        } elseif (is_callable($c = array(
-            $this,
-            'sigunknown'
-        ))) {
+        }
+		elseif( is_callable($c = array($this,'sigunknown')) )
+		{
+			$this->log('sighandler '.getmypid().' calling function sigunknown()',2);
             call_user_func($c, $signo);
         }
     }
@@ -128,7 +125,6 @@ abstract class Thread
     */
     public function shutdown()
     {
-        posix_kill(posix_getppid() , SIGCHLD);
         exit(0);
     }
     /* @method backsig
@@ -140,23 +136,7 @@ abstract class Thread
     {
         return posix_kill(posix_getppid() , $sig);
     }
-    /* @method sleep
-    @description Delays the process execution for the given number of seconds.
-    @param integer Halt time in seconds.
-    @return void
-    */
-    public function sleep($s)
-    {
-        static $interval = 0.2;
-        $n = $s / $interval;
-        for ($i = 0; $i < $n; ++$i) {
-            if ($this->shutdown) {
-                return FALSE;
-            }
-            usleep($interval * 1000000);
-        }
-        return TRUE;
-    }
+    
     /* @method sigchld
     @description Called when the signal SIGCHLD caught.
     @return void
@@ -165,14 +145,14 @@ abstract class Thread
     {
         $this->waitPid();
     }
+	
     /* @method sigterm
     @description Called when the signal SIGTERM caught.
     @return void
     */
     public function sigterm()
     {
-		Daemon::log('Master caught SIGTERM',2);
-        exit(0);
+        $this->shutdown();
     }
     /* @method sigint
     @description Called when the signal SIGINT caught.
@@ -180,17 +160,15 @@ abstract class Thread
     */
     public function sigint()
     {
-		Daemon::log('Master caught SIGINT',2);
-        exit(0);
+        $this->shutdown();
     }
     /* @method sigquit
-    @description Called when the signal SIGTERM caught.
+    @description Called when the signal SIGQUIT caught.
     @return void
     */
     public function sigquit()
     {
-		Daemon::log('Master caught SIGQUIT',2);
-        $this->shutdown = TRUE;
+        $this->shutdown();
     }
     /* @method sigkill
     @description Called when the signal SIGKILL caught.
@@ -198,7 +176,7 @@ abstract class Thread
     */
     public function sigkill()
     {
-        exit(0);
+        $this->shutdown();
     }
     /* @method stop
     @description Terminates the process.
@@ -216,28 +194,10 @@ abstract class Thread
     */
     public function waitPid()
     {
-        $pid = pcntl_waitpid(-1, $status, WNOHANG);
-        if ($pid > 0) {
-            foreach($this->child_collection as & $col) {
-                foreach($col->threads as $k => & $t) {
-                    if ($t->pid === $pid) {
-                        $t->terminated = TRUE;
-                        return TRUE;
-                    }
-                }
-            }
-        }
-        return FALSE;
+        return TRUE;
     }
-    /* @method signal
-    @description Sends arbitrary signal to the process.
-    @param integer Signal's number.
-    @return boolean Success.
-    */
-    public function signal($sig)
-    {
-        return posix_kill($this->pid, $sig);
-    }
+
+	
     /* @method setproctitle
     @description Sets a title of the current process.
     @param string Title.
@@ -250,6 +210,8 @@ abstract class Thread
         }
         return FALSE;
     }
+
+
     /* @method sigwait
     @description Waits for signals, with a timeout.
     @param int Seconds.
@@ -269,7 +231,17 @@ abstract class Thread
         }
         return FALSE;
     }
+
+	/**
+	 * запись в лог от имени процесса
+	 */
+	public function log($_msg,$_verbose = 1)
+	{
+		Daemon::log_with_sender($_msg,$this->thread_name,$_verbose);
+	}
 }
+
+
 if (!function_exists('pcntl_sigtimedwait')) {
     function pcntl_sigtimedwait($signals, $siginfo, $sec, $nano)
     {
@@ -280,4 +252,5 @@ if (!function_exists('pcntl_sigtimedwait')) {
         pcntl_signal_dispatch();
         return TRUE;
     }
+
 }
