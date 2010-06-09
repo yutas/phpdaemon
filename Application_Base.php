@@ -17,7 +17,7 @@ abstract class Application_Base
 	//инициализируем параметры, переданные через командную строку и через Daemon::init()
 	public function apply_settings($_settings)
 	{
-		$this->settings = array_merge($this->settings,$_settings);
+		self::$settings = array_merge(self::$settings,$_settings);
 	}
 
 	//функция, которая выполняется перед главным циклом
@@ -56,6 +56,13 @@ abstract class Application_Base
 		{
 			Daemon::log_with_sender($_msg,'appl',$_verbose);
 		}
+	}
+
+
+
+	protected function shutdown()
+	{
+		posix_kill(posix_getpid(),SIGTERM);
 	}
 
 }

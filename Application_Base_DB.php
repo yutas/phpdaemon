@@ -21,7 +21,7 @@ class Application_Base_DB extends Application_Base
 		{
 			self::log('Could not connect to database: '.$this->db_error());
 			//если нет, отправляем письмо админам с ахтунгом
-			die();
+			die('Could not connect to database: '.$this->db_error());
 		}
 
 		//charset
