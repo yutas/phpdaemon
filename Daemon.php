@@ -26,7 +26,7 @@ class Daemon
 	public static $settings = array(					//настройки демона
 		'max_child_count' => 20,						//максимальное количество тредов
 		'daemonize' => true,							//демонизировать или нет
-		'log_verbose' => 1,								//степерь подробности логирования
+		'logs_verbose' => 1,								//степерь подробности логирования
 		'logs_to_strerr' => false,						//выводить сообщения в STDERR
 		'sigwait_nano' => 1000000,						//задержка выполнения runtime для ожидания управляющих сигналов операционной системы (наносекунды)
 		'sigwait_sec' => 0,								//задержка выполнения runtime для ожидания управляющих сигналов операционной системы (секунды)
@@ -219,26 +219,26 @@ class Daemon
 	 */
 	public static function log($_msg,$_verbose = 1)
 	{
-		self::log_with_sender($_msg,'DAEMON',$_verbose);
+		if($_verbose <= self::$settings['logs_verbose'])		//если уровень подробности записи не выше ограничения в настройках
+		{
+			self::log_with_sender($_msg,'DAEMON');
+		}
 	}
 
 	/**
 	 * добавляем запись в лог от имени $_sender
 	 */
-	public static function log_with_sender($_msg,$_sender = 'nobody',$_verbose = 1)
+	public static function log_with_sender($_msg,$_sender = 'nobody')
     {
-		if($_verbose <= self::$settings['log_verbose'])		//если уровень подробности записи не выше ограничения в настройках
+		$mt = explode(' ', microtime());
+		if (self::$settings['logs_to_stderr'] && defined('STDERR'))	//если в настройках определен вывод в STDERR
 		{
-			$mt = explode(' ', microtime());
-			if (self::$settings['logs_to_stderr'] && defined('STDERR'))	//если в настройках определен вывод в STDERR
-			{
-				//выводим логи еще и в управляющий терминал
-				fwrite(STDERR, '['.strtoupper($_sender).'] ' . $_msg . "\n");
-			}
-			if (self::$logpointer)							//если файл логов был открыт без ошибок
-			{
-				fwrite(self::$logpointer, '[' . date('D, j M Y H:i:s', $mt[1]) . '.' . sprintf('%06d', $mt[0] * 1000000) . ' ' . date('O') . '] ['.strtoupper($_sender).'] ' . $_msg . "\n");
-			}
+			//выводим логи еще и в управляющий терминал
+			fwrite(STDERR, '['.strtoupper($_sender).'] ' . $_msg . "\n");
+		}
+		if (self::$logpointer)							//если файл логов был открыт без ошибок
+		{
+			fwrite(self::$logpointer, '[' . date('D, j M Y H:i:s', $mt[1]) . '.' . sprintf('%06d', $mt[0] * 1000000) . ' ' . date('O') . '] ['.strtoupper($_sender).'] ' . $_msg . "\n");
 		}
     }
 
@@ -321,7 +321,7 @@ class Daemon
 		//verbose
 		if(isset($_args['v']) && intval($_args['v']) )
 		{
-			self::$settings['log_verbose'] = 2;
+			self::$settings['logs_verbose'] = 2;
 		}
 
 		//don't daemonize

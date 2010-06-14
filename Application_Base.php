@@ -5,7 +5,7 @@ abstract class Application_Base
 {
 
 	protected static $settings = array(
-		'logs_verbose' => 1,
+		'verbose' => 1,
 	);
 	private $master_thread = FALSE;
 
@@ -52,9 +52,9 @@ abstract class Application_Base
 	 */
 	public static function log($_msg,$_verbose = 1)
 	{
-		if($_verbose <= self::$settings['logs_verbose'])
+		if($_verbose <= self::$settings['verbose'])
 		{
-			Daemon::log_with_sender($_msg,'appl',$_verbose);
+			Daemon::log_with_sender($_msg,'appl');
 		}
 	}
 

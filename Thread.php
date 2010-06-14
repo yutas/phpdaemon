@@ -237,7 +237,10 @@ abstract class Thread
 	 */
 	public function log($_msg,$_verbose = 1)
 	{
-		Daemon::log_with_sender($_msg,$this->thread_name,$_verbose);
+		if($_verbose <= Daemon::$settings['logs_verbose'])
+		{
+			Daemon::log_with_sender($_msg,$this->thread_name);
+		}
 	}
 }
 
