@@ -155,12 +155,19 @@ class Thread_Master extends Thread
 	/**
 	 * завершение работы мастерского процесса
 	 */
-    public function shutdown($signo = FALSE)
+    public function shutdown($kill = FALSE)
     {
-		$this->log('Getting shutdown...');
 		$this->shutdown = TRUE;
 		//останавливаем все дочерние процессы
-		$this->child_collection->stop($signo);
+		$this->child_collection->stop($kill);
+		//ждем, пока не остановятся все дочерние процессы
+		$this->log('Waiting for all children to shutdown...');
+		while($this->child_collection->getNumber() > 0)
+		{
+			$this->sigwait(Daemon::$settings['sigwait_sec'],Daemon::$settings['sigwait_nano']);
+			continue;
+		}
+		$this->log('Getting shutdown...');
         exit(0);
     }
 
@@ -174,12 +181,10 @@ class Thread_Master extends Thread
         $pid = pcntl_waitpid(-1, $status, WNOHANG);
 		if ($pid > 0) {
 			//удаляем этот процесс из коллекции
-            foreach($this->child_collection as & $col) {
-                foreach($col->threads as $k => & $t) {
-                    if ($t->pid === $pid) {
-                        $this->child_collection->delete($k);
-                    }
-                }
+            foreach($this->child_collection->threads as $k => & $t) {
+				if ($t->pid === $pid) {
+					$this->child_collection->delete_spawn($t->pid);
+				}
             }
 			return TRUE;
         }

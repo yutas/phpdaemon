@@ -176,7 +176,8 @@ abstract class Thread
     */
     public function sigkill()
     {
-        $this->shutdown();
+		//убиваем все дочерние процессы
+        $this->shutdown(TRUE);
     }
     /* @method stop
     @description Terminates the process.
