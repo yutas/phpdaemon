@@ -110,7 +110,7 @@ class Daemon
 	 */
 	public static function start(Application_Base $_appl)
 	{
-		self::log('[DAEMON] starting...');
+		self::log('starting '.self::$daemon_name.'...',1,TRUE);
 		//инициализируем исполняемое приложение
 		self::set_application($_appl);
 		if (self::$pid && posix_kill(self::$pid, SIGTTIN)) {
@@ -145,10 +145,10 @@ class Daemon
 	 */
 	public static function stop($mode = 1)
 	{
-		self::log('[STOP] Stoping daemon (PID ' . self::$pid . ') ...');
+		self::log('Stoping '.self::$daemon_name.' (PID ' . self::$pid . ') ...',1,TRUE);
 		$ok = self::$pid && posix_kill(self::$pid, $mode === 3 ? SIGINT : SIGTERM);
         if (!$ok) {
-            echo '[STOP] Error: it seems that daemon is not running' . (self::$pid ? ' (PID ' . self::$pid . ')' : '') . ".\n";
+			self::log('Error: it seems that daemon is not running' . (self::$pid ? ' (PID ' . self::$pid . ')' : ''),1,TRUE);
         }
 		self::$pid = 0;
 		file_put_contents(self::$pidfile, '');
@@ -217,21 +217,21 @@ class Daemon
 	/**
 	 * добавляем запись в лог от имени демона
 	 */
-	public static function log($_msg,$_verbose = 1)
+	public static function log($_msg,$_verbose = 1,$_to_stderr = FALSE)
 	{
 		if($_verbose <= self::$settings['logs_verbose'])		//если уровень подробности записи не выше ограничения в настройках
 		{
-			self::log_with_sender($_msg,'DAEMON');
+			self::log_with_sender($_msg,'DAEMON',$_to_stderr);
 		}
 	}
 
 	/**
 	 * добавляем запись в лог от имени $_sender
 	 */
-	public static function log_with_sender($_msg,$_sender = 'nobody')
+	public static function log_with_sender($_msg,$_sender = 'nobody',$_to_stderr = FALSE)
     {
 		$mt = explode(' ', microtime());
-		if (self::$settings['logs_to_stderr'] && defined('STDERR'))	//если в настройках определен вывод в STDERR
+		if ( ($_to_stderr || self::$settings['logs_to_stderr']) && defined('STDERR'))	//если в настройках определен вывод в STDERR
 		{
 			//выводим логи еще и в управляющий терминал
 			fwrite(STDERR, '['.strtoupper($_sender).'] ' . $_msg . "\n");
