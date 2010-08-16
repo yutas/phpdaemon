@@ -101,6 +101,7 @@ class Daemon
 		elseif(self::$runmode == 'restart')
 		{
 			self::stop();
+			sleep(1);
 			self::start($_appl);
 		}
 	}
