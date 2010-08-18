@@ -4,6 +4,7 @@ class Application_Base_DB extends Application_Base
 {
 	protected $db;							//соединение с БД (mysqli)
 	protected $db_config = array();
+	protected $reconnect_attemts = 10;		//попытки переподключиться к БД
 
 
 
@@ -15,20 +16,27 @@ class Application_Base_DB extends Application_Base
 
 	protected function db_connect()
 	{
+		unset($this->db);
 		//mysqli
 		$this->db = new mysqli($this->db_config['host'],$this->db_config['user'],$this->db_config['password'],$this->db_config['database']);
 		if( $this->db->connect_error )
 		{
-			self::log('Could not connect to database: '.$this->db_error());
+			self::log('Could not connect to database: error '.$this->db_errno().' '.$this->db_error());
 			//если нет, отправляем письмо админам с ахтунгом
-			die('Could not connect to database: '.$this->db_error());
+			if($this->db_errno() == 2006)
+			{
+				return $this->reconnect();
+			}
+			return FALSE;
 		}
-
+		
 		//charset
 		if(isset($this->db_config['charset']))
 		{
 			$this->db_query('SET NAMES '.$this->db_config['charset']);
 		}
+
+		return TRUE;
 	}
 
 
@@ -38,10 +46,41 @@ class Application_Base_DB extends Application_Base
 		$res = $this->db->query($query);
 		if($this->db_error())
 		{
-			self::log('DB error: '.$this->db_error().' --- query: '.$query);
+			self::log('DB error '.$this->db_errno().': '.$this->db_error().' --- query: '.$query);
+			if($this->db_errno() == 2006)
+			{
+				if($this->reconnect())
+				{
+					return $this->db_query($query);
+				}
+			}
 			return false;
 		}
 		return $res;
+	}
+
+	/**
+	 * Функция переподключается к БД
+	 *
+	 * @return boolean
+	 */
+	protected function reconnect()
+	{
+		if($this->reconnect_attemts)
+		{
+			self::log('Trying to reconnect... ');
+			unset($this->db);
+			--$this->reconnect_attemts;
+			if($this->db_connect())
+			{
+				$this->reconnect_attemts = 10;
+				return TRUE;
+			}
+			else
+			{
+				return $this->reconnect();
+			}
+		}
 	}
 
 
@@ -59,6 +98,11 @@ class Application_Base_DB extends Application_Base
 	protected function db_error()
 	{
 		return $this->db->error;
+	}
+
+	protected function db_errno()
+	{
+		return $this->db->errno;
 	}
 
 	protected function db_thread_id()
