@@ -26,10 +26,12 @@ class Daemon
 	public static $settings = array(					//настройки демона
 		'max_child_count' => 20,						//максимальное количество тредов
 		'daemonize' => true,							//демонизировать или нет
-		'logs_verbose' => 1,								//степерь подробности логирования
+		'logs_verbose' => 1,							//степерь подробности логирования
 		'logs_to_strerr' => false,						//выводить сообщения в STDERR
 		'sigwait_nano' => 1000000,						//задержка выполнения runtime для ожидания управляющих сигналов операционной системы (наносекунды)
 		'sigwait_sec' => 0,								//задержка выполнения runtime для ожидания управляющих сигналов операционной системы (секунды)
+		'pid_dir' => '/var/run',						//папка для хранения pid-файла
+		'log_dir' => '/var/tmp',						//папка для хранения log-файла
 	);
 	
 	protected static $args = array('daemon' => array(),'appl' => array());	//параметры, передаваемые демону в командной строке или в методе Daemon::init()
@@ -58,11 +60,11 @@ class Daemon
 		//задаем имя демону
 		self::set_name(basename($_SERVER['argv'][0]));
 
-		//создаем pid-файл или берем из него значение pid процесса, если он уже существует
-		self::get_pid();
-
 		//открываем лог файл
 		self::open_logs();
+
+		//создаем pid-файл или берем из него значение pid процесса, если он уже существует
+		self::get_pid();
 	}
 
 	/**
@@ -160,42 +162,43 @@ class Daemon
 	 */
 	public static function get_pid()
 	{
-		self::$pidfile = '/var/tmp/'.self::$daemon_name.'.pid';
+		self::$pidfile = self::$settings['pid_dir'].'/'.self::$daemon_name.'.pid';
 		
 		if (!file_exists(self::$pidfile))	//если pid-файла нет
 		{	
             if (!touch(self::$pidfile))		//и его нельзя создать
 			{
-                self::log('Couldn\'t create pid-file \'' . self::$pidfile . '\'.');		//пишем ошибку в лог
+                self::log('Couldn\'t create or find pid-file \'' . self::$pidfile . '\'',1,TRUE);		//пишем ошибку в лог
 				self::$pid = FALSE;
             }
-            self::$pid = 0;					//если можно создать - все в порядке
-			return TRUE;
+			else
+            {
+				self::$pid = 0;					//если можно создать - все в порядке
+			}
         }
 		elseif (!is_file(self::$pidfile))	//если это не файл вообще, а папка, к примеру
 		{
-            self::log('Pid-file \'' . self::$pidfile . '\' must be a regular file.');	//пишем ошибку в лог
+            self::log('Pid-file \'' . self::$pidfile . '\' must be a regular file',1,TRUE);	//пишем ошибку в лог
             self::$pid = FALSE;
         }
 		elseif (!is_writable(self::$pidfile))	//если файл недоступен для записи
 		{
-            self::log('Pid-file \'' . self::$pidfile . '\' must be writable.');			//пишем ошибку в лог
+            self::log('Pid-file \'' . self::$pidfile . '\' must be writable',1,TRUE);			//пишем ошибку в лог
 			self::$pid = FALSE;
 		}
 		elseif (!is_readable(self::$pidfile))	//если файл недоступен для чтения
 		{
-            self::log('Pid-file \'' . self::$pidfile . '\' must be readable.');			//пишем ошибку в лог
+            self::log('Pid-file \'' . self::$pidfile . '\' must be readable',1,TRUE);			//пишем ошибку в лог
             self::$pid = FALSE;
         }
 		else
 		{
             self::$pid = (int)file_get_contents(self::$pidfile);	//если файл есть, то берем оттуда pid работающего процесса
-			return TRUE;
         }
 
 		if(self::$pid === FALSE)		//прерываем выполнение, если возникала ошибка
 		{
-			self::log('Program exits');
+			self::log('Exits',1,TRUE);
 			exit();
 		}
 
@@ -207,8 +210,8 @@ class Daemon
 	public static function open_logs()
     {
 		//имя файла логов
-		self::$settings['logstorage'] = '/var/tmp/'.self::$daemon_name.'.log';
-		if (self::$logpointer) {			//если он почему-то был ранее открыт, сперва его закроем
+		self::$settings['logstorage'] = self::$settings['log_dir'].'/'.self::$daemon_name.'.log';
+		if (self::$logpointer) {			//если он был ранее открыт, сперва его закроем
 			fclose(self::$logpointer);
 			self::$logpointer = FALSE;
 		}

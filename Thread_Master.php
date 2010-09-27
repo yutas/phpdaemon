@@ -113,6 +113,8 @@ class Thread_Master extends Thread
 	{
 		if($this->child_collection->getNumber() < Daemon::$settings['max_child_count'])		//если еще есть свободные места для дочерних процессов
 		{
+			//переоткрываем логи (вдруг файл лога удалили)
+			Daemon::open_logs();
 			//увеличиваем счетчик
 			++$this->child_count;
 			$this->log('Spawning a child',2);
