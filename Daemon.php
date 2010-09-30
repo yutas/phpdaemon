@@ -307,7 +307,9 @@ class Daemon
 	 */
 	public static function apply_args($_args)
 	{
-
+		//мерджим настройки из файла запуска
+		self::$settings = array_merge(self::$settings,$_args);
+		
 		//если непонятно, что делать, показываем хелп и выходим
 		if(self::$runmode === FALSE)
 		{
