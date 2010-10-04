@@ -117,7 +117,7 @@ class Daemon
 		//инициализируем исполняемое приложение
 		self::set_application($_appl);
 		if (self::$pid && posix_kill(self::$pid, SIGTTIN)) {
-            self::log('[START] phpd with pid-file \'' . self::$pidfile . '\' is running already (PID ' . self::$pid . ')');
+            self::log('[START] phpd with pid-file \'' . self::$pidfile . '\' is running already (PID ' . self::$pid . ')',1,TRUE);
             exit;
         }
 
