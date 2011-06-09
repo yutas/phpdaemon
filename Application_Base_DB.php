@@ -88,6 +88,7 @@ class Application_Base_DB extends Application_Base
             if($this->db_connect())
             {
                 $this->reconnect_attemts = 10;
+                self::log('Successfully reconnected! ');
                 return TRUE;
             }
             else
