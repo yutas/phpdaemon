@@ -1,11 +1,11 @@
 <?php
 abstract class Thread
 {
-	protected $appl = FALSE;							//выполняемое приложение
+    protected $appl = FALSE;                            //выполняемое приложение
     public $pid;
-    public $shutdown = FALSE;							//флаг завершения работы
-	protected $priority = 4;							//приоритет процесса в ОС
-	protected $thread_name = 'unnamed_thread';			//имя процесса
+    public $shutdown = FALSE;                           //флаг завершения работы
+    protected $priority = 4;                            //приоритет процесса в ОС
+    protected $thread_name = 'unnamed_thread';          //имя процесса
     public static $signalsno = array(
         1,
         2,
@@ -85,12 +85,12 @@ abstract class Thread
         if ($pid == 0) {
             $this->pid = posix_getpid();
             foreach(Thread::$signals as $no => $name) {
-				if (($name === 'SIGKILL') || ($name == 'SIGSTOP'))
-				{
+                if (($name === 'SIGKILL') || ($name == 'SIGSTOP'))
+                {
                     continue;
                 }
                 if (!pcntl_signal($no, array($this,'sighandler') , TRUE))
-				{
+                {
                     $this->log('Cannot assign ' . $name . ' signal');
                 }
             }
@@ -107,15 +107,15 @@ abstract class Thread
     */
     public function sighandler($signo)
     {
-		$this->log('sighandler of process '.getmypid().' caught '.Thread::$signals[$signo],2);
+        $this->log('sighandler of process '.getmypid().' caught '.Thread::$signals[$signo],2);
         if( is_callable($c = array($this,strtolower(Thread::$signals[$signo]))) )
-		{
-			$this->log('sighandler '.getmypid().' calling function '.strtolower(Thread::$signals[$signo]).'()',2);
+        {
+            $this->log('sighandler '.getmypid().' calling function '.strtolower(Thread::$signals[$signo]).'()',2);
             call_user_func($c);
         }
-		elseif( is_callable($c = array($this,'sigunknown')) )
-		{
-			$this->log('sighandler '.getmypid().' calling function sigunknown()',2);
+        elseif( is_callable($c = array($this,'sigunknown')) )
+        {
+            $this->log('sighandler '.getmypid().' calling function sigunknown()',2);
             call_user_func($c, $signo);
         }
     }
@@ -145,7 +145,7 @@ abstract class Thread
     {
         $this->waitPid();
     }
-	
+    
     /* @method sigterm
     @description Called when the signal SIGTERM caught.
     @return void
@@ -176,7 +176,7 @@ abstract class Thread
     */
     public function sigkill()
     {
-		//убиваем все дочерние процессы
+        //убиваем все дочерние процессы
         $this->shutdown(TRUE);
     }
     /* @method stop
@@ -198,7 +198,7 @@ abstract class Thread
         return TRUE;
     }
 
-	
+    
     /* @method setproctitle
     @description Sets a title of the current process.
     @param string Title.
@@ -233,16 +233,16 @@ abstract class Thread
         return FALSE;
     }
 
-	/**
-	 * запись в лог от имени процесса
-	 */
-	public function log($_msg,$_verbose = 1)
-	{
-		if($_verbose <= Daemon::$settings['logs_verbose'])
-		{
-			Daemon::log_with_sender($_msg,$this->thread_name);
-		}
-	}
+    /**
+     * запись в лог от имени процесса
+     */
+    public function log($_msg,$_verbose = 1)
+    {
+        if($_verbose <= Daemon::$settings['logs_verbose'])
+        {
+            Daemon::log_with_sender($_msg,$this->thread_name);
+        }
+    }
 }
 
 

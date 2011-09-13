@@ -21,7 +21,7 @@ class Application_Base_DB extends Application_Base
         $this->db = new mysqli($this->db_config['host'],$this->db_config['user'],$this->db_config['password'],$this->db_config['database']);
         if( $this->db->connect_error )
         {
-            self::log('Could not connect to database: error '.$this->db_errno().' '.$this->db_error());
+            self::log('Could not connect to database: error '.$this->connect_errno.' '.$this->db->connect_error);
             //если нет, отправляем письмо админам с ахтунгом
             if($this->db_errno() == 2006)
             {
