@@ -3,7 +3,6 @@ abstract class Thread
 {
     protected $appl = FALSE;                            //выполняемое приложение
     public $pid;
-    public $shutdown = FALSE;                           //флаг завершения работы
     protected $priority = 4;                            //приоритет процесса в ОС
     protected $thread_name = 'unnamed_thread';          //имя процесса
     public static $signalsno = array(
@@ -160,7 +159,7 @@ abstract class Thread
     */
     public function sigint()
     {
-        $this->shutdown();
+        $this->shutdown(TRUE);
     }
     /* @method sigquit
     @description Called when the signal SIGQUIT caught.
@@ -186,7 +185,6 @@ abstract class Thread
     */
     public function stop($kill = FALSE)
     {
-        $this->shutdown = TRUE;
         return posix_kill($this->pid, $kill ? SIGKILL : SIGTERM);
     }
     /* @method waitPid

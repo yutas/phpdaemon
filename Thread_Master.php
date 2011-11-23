@@ -10,6 +10,7 @@ class Thread_Master extends Thread
     protected $priority = 100;              //приоритет процесса
     protected $child_count = 0;             //текущее количество подпроцессов (детей)
     protected $thread_name = 'master';      //имя процесса (используется для логирования)
+	protected $pidfile = '';
 
 
     /**
@@ -30,6 +31,11 @@ class Thread_Master extends Thread
         }
         if ($pid == 0) {                    //это выполняется в дочернем (мастерском процессе)
             $this->pid = posix_getpid();    //инициализируем pid нового процесса
+			$this->pidfile = Daemon::$pidfile;
+
+			//записываем pid процесса в pid-файл
+			file_put_contents($this->pidfile, $this->pid);
+
             foreach(Thread::$signals as $no => $name) {                 //задаем обработчики системных сигналов
                 if (($name === 'SIGKILL') || ($name == 'SIGSTOP'))
                 {
@@ -169,6 +175,7 @@ class Thread_Master extends Thread
             $this->sigwait(Daemon::$settings['sigwait_sec'],Daemon::$settings['sigwait_nano']);
             continue;
         }
+        file_put_contents($this->pidfile, '');
         $this->log('Getting shutdown...');
         exit(0);
     }

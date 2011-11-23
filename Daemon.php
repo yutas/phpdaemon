@@ -98,7 +98,12 @@ class Daemon
         }
         elseif(self::$runmode == 'stop')
         {
-            self::stop();
+			$stop_mode = 1;
+			if(isset(self::$settings['f']) && self::$settings['f'] == TRUE)
+			{
+				$stop_mode = 2;
+			}
+            self::stop($stop_mode);
         }
         elseif(self::$runmode == 'restart')
         {
@@ -137,9 +142,6 @@ class Daemon
             self::log('could not start master');
             exit(0);
         }
-
-        //записываем pid процесса в pid-файл
-        file_put_contents(self::$pidfile, self::$pid);
     }
 
 
@@ -149,12 +151,12 @@ class Daemon
     public static function stop($mode = 1)
     {
         self::log('Stoping '.self::$daemon_name.' (PID ' . self::$pid . ') ...',1,TRUE);
-        $ok = self::$pid && posix_kill(self::$pid, $mode === 3 ? SIGINT : SIGTERM);
+        $ok = self::$pid && posix_kill(self::$pid, $mode === 2 ? SIGINT : SIGTERM);
         if (!$ok) {
             self::log('Error: it seems that daemon is not running' . (self::$pid ? ' (PID ' . self::$pid . ')' : ''),1,TRUE);
+			file_put_contents(self::$pidfile, '');
         }
         self::$pid = 0;
-        file_put_contents(self::$pidfile, '');
     }
 
     /**
@@ -162,7 +164,7 @@ class Daemon
      */
     public static function get_pid()
     {
-        self::$pidfile = self::$settings['pid_dir'].'/'.self::$daemon_name.'.pid';
+        self::$pidfile = rtrim(self::$settings['pid_dir'],'/').'/'.self::$daemon_name.'.pid';
 
         if (!file_exists(self::$pidfile))   //если pid-файла нет
         {
