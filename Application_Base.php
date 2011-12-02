@@ -30,6 +30,12 @@ abstract class Application_Base
     //функция, которая выполняется после главного цикла
     public function after_runtime(){}
 
+	//функция, которая выполняется по сигналу SIGUSR1 мастерскому процессу
+	public function sigusr1_function(){}
+
+	//функция, которая выполняется по сигналу SIGUSR2 мастерскому процессу
+	public function sigusr2_function(){}
+
     //инициализирует ссылку на главный процесс демона
     public function set_master_thread(Thread_Master $master)
     {

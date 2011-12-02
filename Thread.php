@@ -135,7 +135,7 @@ abstract class Thread
     {
         return posix_kill(posix_getppid() , $sig);
     }
-    
+
     /* @method sigchld
     @description Called when the signal SIGCHLD caught.
     @return void
@@ -144,7 +144,7 @@ abstract class Thread
     {
         $this->waitPid();
     }
-    
+
     /* @method sigterm
     @description Called when the signal SIGTERM caught.
     @return void
@@ -196,7 +196,16 @@ abstract class Thread
         return TRUE;
     }
 
-    
+    public function sigusr1()
+    {
+        return TRUE;
+    }
+
+    public function sigusr2()
+    {
+        return TRUE;
+    }
+
     /* @method setproctitle
     @description Sets a title of the current process.
     @param string Title.

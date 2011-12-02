@@ -32,7 +32,7 @@ class Application_Example extends Application_Base
 
 	public function child_before_action()
 	{
-		
+
 	}
 
 }

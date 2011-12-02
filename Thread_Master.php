@@ -11,6 +11,7 @@ class Thread_Master extends Thread
     protected $child_count = 0;             //текущее количество подпроцессов (детей)
     protected $thread_name = 'master';      //имя процесса (используется для логирования)
 	protected $pidfile = '';
+	protected $shutdown = false;
 
 
     /**
@@ -199,5 +200,27 @@ class Thread_Master extends Thread
         }
     }
 
+
+	/**
+	 * sigusr1
+	 *
+	 * @access public
+	 * @return void
+	 */
+    public function sigusr1()
+    {
+		return $this->appl->sigusr1_function();
+    }
+
+	/**
+	 * sigusr2
+	 *
+	 * @access public
+	 * @return void
+	 */
+    public function sigusr2()
+    {
+		return $this->appl->siguser2_function();
+    }
 
 }

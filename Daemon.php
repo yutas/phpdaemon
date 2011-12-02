@@ -27,7 +27,7 @@ class Daemon
         'max_child_count' => 20,                        //максимальное количество тредов
         'daemonize' => true,                            //демонизировать или нет
         'logs_verbose' => 1,                            //степерь подробности логирования
-        'logs_to_strerr' => false,                      //выводить сообщения в STDERR
+        'logs_to_stderr' => false,                      //выводить сообщения в STDERR
         'sigwait_nano' => 1000000,                      //задержка выполнения runtime для ожидания управляющих сигналов операционной системы (наносекунды)
         'sigwait_sec' => 0,                             //задержка выполнения runtime для ожидания управляющих сигналов операционной системы (секунды)
         'pid_dir' => '/var/run',                        //папка для хранения pid-файла
@@ -51,8 +51,8 @@ class Daemon
         //  2. $_settings переопределяет атрибуты класса
         //  3. Командная строка переопределяет $_settings
         self::$args = self::get_args($_SERVER['argv']);
-        self::$args['daemon'] = array_merge(is_array($_settings['daemon'])?$_settings['daemon']:array(),self::$args['daemon']);
-        self::$args['appl'] = array_merge(is_array($_settings['appl'])?$_settings['appl']:array(),self::$args['appl']);
+        self::$args['daemon'] = array_merge(isset($_settings['daemon']) && is_array($_settings['daemon'])?$_settings['daemon']:array(),self::$args['daemon']);
+        self::$args['appl'] = array_merge(isset($_settings['appl']) && is_array($_settings['appl'])?$_settings['appl']:array(),self::$args['appl']);
 
         //инициализируем входные параметры демона
         self::apply_args(self::$args['daemon']);

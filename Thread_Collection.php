@@ -5,7 +5,7 @@ class Thread_Collection
     public $threads = array();
     public $waitstatus;
     public $spawncounter = 0;
-	
+
     /* @method push
     @description Pushes certain thread to the collection.
     @param object Thread to push.
@@ -17,7 +17,7 @@ class Thread_Collection
         $thread->spawnid = $this->spawncounter;
         $this->threads[$thread->spawnid] = $thread;
     }
-	
+
     /* @method start
     @description Starts the collected threads.
     @return void
@@ -28,7 +28,7 @@ class Thread_Collection
             $thread->start();
         }
     }
-	
+
     /* @method stop
     @description Stops the collected threads.
     @return void
@@ -39,7 +39,7 @@ class Thread_Collection
             $thread->stop($kill);
         }
     }
-	
+
     /* @method getNumber
     @description Returns a number of collected threads.
     @return integer Number.
@@ -48,7 +48,7 @@ class Thread_Collection
     {
         return $this->spawncounter; //sizeof($this->threads);
     }
-	
+
     /* @method signal
     @description Sends a signal to threads.
     @param integer Signal's number.
