@@ -118,7 +118,7 @@ class Thread_Master extends Thread
      */
     public function spawn_child($_before_function = FALSE,$_runtime_function = FALSE,$_after_function = FALSE)
     {
-        if($this->child_collection->getNumber() < Daemon::$settings['max_child_count'])     //если еще есть свободные места для дочерних процессов
+        if($this->can_spawn_child())     //если еще есть свободные места для дочерних процессов
         {
             //переоткрываем логи (вдруг файл лога удалили)
             Daemon::open_logs();
@@ -126,8 +126,6 @@ class Thread_Master extends Thread
             ++$this->child_count;
             $this->log('Spawning a child',2);
             $thread = new Thread_Child;
-            //добавляем процесс в коллекцию
-            $this->child_collection->push($thread);
 
             //инициализируем функции
             $thread->set_runtime_function($_runtime_function);
@@ -139,6 +137,10 @@ class Thread_Master extends Thread
             if (-1 === $pid) {
                 $this->log('Сould not start child');
             }
+
+            //добавляем процесс в коллекцию
+            $this->child_collection->push($thread);
+
             return $pid;
         }
     }
@@ -169,13 +171,15 @@ class Thread_Master extends Thread
         $this->shutdown = TRUE;
         //останавливаем все дочерние процессы
         $this->child_collection->stop($kill);
-        //ждем, пока не остановятся все дочерние процессы
-        $this->log('Waiting for all children to shutdown...');
-        while($this->child_collection->getNumber() > 0)
-        {
-            $this->sigwait(Daemon::$settings['sigwait_sec'],Daemon::$settings['sigwait_nano']);
-            continue;
-        }
+		if( ! $kill) {
+			//ждем, пока не остановятся все дочерние процессы
+			$this->log('Waiting for all children to shutdown...');
+			while($this->child_collection->getNumber() > 0)
+			{
+				$this->sigwait(Daemon::$settings['sigwait_sec'],Daemon::$settings['sigwait_nano']);
+				continue;
+			}
+		}
         file_put_contents($this->pidfile, '');
         $this->log('Getting shutdown...');
         exit(0);
@@ -200,6 +204,11 @@ class Thread_Master extends Thread
         }
     }
 
+
+	public function can_spawn_child()
+	{
+		return $this->child_collection->getNumber() < Daemon::$settings['max_child_count'];
+	}
 
 	/**
 	 * sigusr1

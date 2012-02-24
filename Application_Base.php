@@ -7,6 +7,11 @@ abstract class Application_Base
     protected static $settings = array(
         'verbose' => 1,
     );
+
+	protected static $settings_desc = array(
+        'verbose' => " - verbose application logs",
+	);
+
     private $master_thread = FALSE;
 
 
@@ -17,7 +22,10 @@ abstract class Application_Base
     //инициализируем параметры, переданные через командную строку и через Daemon::init()
     public function apply_settings($_settings)
     {
-        self::$settings = array_merge(self::$settings,$_settings);
+		if( ! empty($_settings['verbose'])) {
+			$_settings['verbose'] = 2;
+		}
+        static::$settings = array_merge(static::$settings,$_settings);
     }
 
     //функция, которая выполняется перед главным циклом
@@ -53,12 +61,17 @@ abstract class Application_Base
         return $this->master_thread->spawn_child($_before_function,$_runtime_function,$_after_function);
     }
 
+	protected function _can_spawn_child()
+	{
+		return $this->master_thread->can_spawn_child();
+	}
+
     /**
      * запись в лог от имени приложения
      */
     public static function log($_msg,$_verbose = 1)
     {
-        if($_verbose <= self::$settings['verbose'])
+        if($_verbose <= (static::$settings['verbose']))
         {
             Daemon::log_with_sender($_msg,'appl');
         }
@@ -71,4 +84,15 @@ abstract class Application_Base
         posix_kill(posix_getpid(),SIGTERM);
     }
 
+
+	public static function get_settings()
+	{
+		return self::$settings;
+	}
+
+
+	public static function get_settings_desc()
+	{
+		return self::$settings_desc;
+	}
 }

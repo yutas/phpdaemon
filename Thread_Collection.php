@@ -13,9 +13,7 @@ class Thread_Collection
     */
     public function push($thread)
     {
-        ++$this->spawncounter;
-        $thread->spawnid = $this->spawncounter;
-        $this->threads[$thread->spawnid] = $thread;
+        $this->threads[$thread->pid] = $thread;
     }
 
     /* @method start
@@ -46,7 +44,7 @@ class Thread_Collection
     */
     public function getNumber()
     {
-        return $this->spawncounter; //sizeof($this->threads);
+        return sizeof($this->threads);
     }
 
     /* @method signal
@@ -70,7 +68,6 @@ class Thread_Collection
 		if(intval($_spawn_id))
 		{
 			unset($this->threads[$_spawn_id]);
-			--$this->spawncounter;
 		}
 	}
 }
