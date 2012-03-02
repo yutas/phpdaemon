@@ -50,7 +50,7 @@ class Common_Daemon_Appl_Import extends Common_Daemon_Appl
 	public function __construct()
 	{
 		//инициализируем расписание
-		self::$settings = array_merge(self::$settings,parent::$settings);
+		self::$settings = self::get_settings();
 		$this->_scheduler = new Common_Importer_ImporterScheduler();
 		$this->_start_time_point = time();
 		set_error_handler(array($this,'handle_warning'),E_WARNING | E_NOTICE);
@@ -205,7 +205,7 @@ class Common_Daemon_Appl_Import extends Common_Daemon_Appl
 	 * @access public
 	 * @return void
 	 */
-	public function handle_warning($errno, $errstr, $errfile, $errline, array $errcontext)
+	public function handle_warning($errno, $errstr, $errfile, $errline, $errcontext = array())
 	{
 		switch($errno) {
 			case E_WARNING:

@@ -10,7 +10,7 @@ class Common_Daemon_Appl_Pooh extends Common_Daemon_Appl
 	 * @var array - конфигурация приложения
 	 */
 	protected static $settings = array(
-		'msg_pack_size' => 20,
+		'msg_pack_size' => 50,
 		'msg_pack_size_delimiter' => 5,
 		'test' => false,
 	);
@@ -72,9 +72,10 @@ class Common_Daemon_Appl_Pooh extends Common_Daemon_Appl
 	 * @var array
 	 * @access private
 	 */
-	private $importAd_types = array(
+	private $importAd_types = array (
 		Parser_Advert_Complete_DBF::TYPE,
-		Parser_Advert_Complete_PartnersCSV::TYPE
+		Parser_Advert_Complete_PartnersCSV::TYPE,
+		Parser_Advert_Complete_MeidgerCSV::TYPE
 	);
 
 	/**
@@ -113,7 +114,7 @@ class Common_Daemon_Appl_Pooh extends Common_Daemon_Appl
 	public function master_runtime()
 	{
 		usleep($this->queue_loop_usleep);
-		if($this->_can_spawn_child()) {
+		if($this->getMaster()->can_spawn_child()) {
 
 			// recieving element from queue
 			$message = $this->complete_queue->receiveElement();
@@ -265,9 +266,7 @@ class Common_Daemon_Appl_Pooh extends Common_Daemon_Appl
 			//бежим по результатам
 			foreach($ExternalIds as $key => $ExternalId) {
 				$result = $results[$key];
-				$ExternalId = (property_exists($result, 'ExternalId'))
-						? $result->ExternalId
-						: $ExternalId;
+				$ExternalId = (property_exists($result, 'ExternalId')) ? $result->ExternalId : $ExternalId;
 				if(($result->Result == Services_Pooh_AdOperationResult::SUCCESS) || ($count == 1)) {
 					$this->_logResult($ad_collection, $type, $ExternalId, $result, true);
 				}

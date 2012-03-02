@@ -5,14 +5,14 @@
  */
 class Thread_Master extends Thread
 {
+	const MAIN_COLLECTION_NAME = 'main';
 
-    protected $child_collection;            //коллекция дочерних процессов
+    protected $child_collections;            //коллекция дочерних процессов
     protected $priority = 100;              //приоритет процесса
     protected $child_count = 0;             //текущее количество подпроцессов (детей)
     protected $thread_name = 'master';      //имя процесса (используется для логирования)
 	protected $pidfile = '';
 	protected $shutdown = false;
-
 
     /**
      * запускаем процесс
@@ -47,9 +47,9 @@ class Thread_Master extends Thread
                     $this->log('Cannot assign ' . $name . ' signal');
                 }
             }
-            $this->child_collection = new Thread_Collection();          //создаем коллекцию для дочерних процессов
-            $this->run();                                               //собсна, активные действия процесса
-            $this->shutdown();                                          //завершаем процесс
+			$this->addChildCollection(self::MAIN_COLLECTION_NAME, Daemon::$settings['max_child_count']);		//создаем коллекцию для дочерних процессов
+            $this->run();																						//собсна, активные действия процесса
+            $this->shutdown();																					//завершаем процесс
         }
         $this->pid = $pid;
         return $pid;
@@ -116,9 +116,9 @@ class Thread_Master extends Thread
      * @param <user_function> $_after_function
      * @return $pid
      */
-    public function spawn_child($_before_function = FALSE,$_runtime_function = FALSE,$_after_function = FALSE)
+    public function spawn_child($_before_function = FALSE,$_runtime_function = FALSE,$_after_function = FALSE, $collection_name = self::MAIN_COLLECTION_NAME)
     {
-        if($this->can_spawn_child())     //если еще есть свободные места для дочерних процессов
+        if($this->can_spawn_child($collection_name))     //если еще есть свободные места для дочерних процессов
         {
             //переоткрываем логи (вдруг файл лога удалили)
             Daemon::open_logs();
@@ -139,7 +139,7 @@ class Thread_Master extends Thread
             }
 
             //добавляем процесс в коллекцию
-            $this->child_collection->push($thread);
+            $this->child_collections[$collection_name]->push($thread);
 
             return $pid;
         }
@@ -170,14 +170,17 @@ class Thread_Master extends Thread
     {
         $this->shutdown = TRUE;
         //останавливаем все дочерние процессы
-        $this->child_collection->stop($kill);
-		if( ! $kill) {
-			//ждем, пока не остановятся все дочерние процессы
-			$this->log('Waiting for all children to shutdown...');
-			while($this->child_collection->getNumber() > 0)
-			{
-				$this->sigwait(Daemon::$settings['sigwait_sec'],Daemon::$settings['sigwait_nano']);
-				continue;
+		foreach($this->child_collections as $name => $collection) {
+			$collection->stop($kill);
+			if( ! $kill) {
+				//ждем, пока не остановятся все дочерние процессы
+				$this->log('Waiting for all children of "'.$name.'" collection to shutdown...');
+				$this->log('"'.$name.'" collection: '.$collection->getNumber().' of child threads remaining...');
+				while($collection->getNumber() > 0)
+				{
+					$this->sigwait(Daemon::$settings['sigwait_sec'],Daemon::$settings['sigwait_nano']);
+					continue;
+				}
 			}
 		}
         file_put_contents($this->pidfile, '');
@@ -195,19 +198,19 @@ class Thread_Master extends Thread
         $pid = pcntl_waitpid(-1, $status, WNOHANG);
         if ($pid > 0) {
             //удаляем этот процесс из коллекции
-            foreach($this->child_collection->threads as $k => & $t) {
-                if ($t->pid === $pid) {
-                    $this->child_collection->delete_spawn($t->pid);
-                }
+            foreach($this->child_collections as $collection) {
+				if($collection->delete_spawn($pid)) {
+					break;
+				}
             }
             return TRUE;
         }
     }
 
 
-	public function can_spawn_child()
+	public function can_spawn_child($collection_name = self::MAIN_COLLECTION_NAME)
 	{
-		return $this->child_collection->getNumber() < Daemon::$settings['max_child_count'];
+		return $this->child_collections[$collection_name]->can_spawn_child();
 	}
 
 	/**
@@ -232,4 +235,12 @@ class Thread_Master extends Thread
 		return $this->appl->siguser2_function();
     }
 
+
+	public function addChildCollection($name = self::MAIN_COLLECTION_NAME, $limit = 0)
+	{
+		if( ! empty($name)) {
+			$this->child_collections[$name] = new Thread_Collection($limit);
+			return true;
+		}
+	}
 }

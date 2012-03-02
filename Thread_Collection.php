@@ -5,6 +5,15 @@ class Thread_Collection
     public $threads = array();
     public $waitstatus;
     public $spawncounter = 0;
+	private $child_limit = 0;
+
+
+	public function __construct($limit)
+	{
+		if( ! empty($limit) && intval($limit)) {
+			$this->child_limit = intval($limit);
+		}
+	}
 
     /* @method push
     @description Pushes certain thread to the collection.
@@ -65,9 +74,16 @@ class Thread_Collection
 	 */
 	public function delete_spawn($_spawn_id)
 	{
-		if(intval($_spawn_id))
+		if(intval($_spawn_id) && ! empty($this->threads[intval($_spawn_id)]))
 		{
 			unset($this->threads[$_spawn_id]);
+			return true;
 		}
+		return false;
+	}
+
+	public function can_spawn_child()
+	{
+		return $this->getNumber() < $this->child_limit;
 	}
 }

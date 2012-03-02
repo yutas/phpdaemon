@@ -50,21 +50,21 @@ abstract class Application_Base
         $this->master_thread = $master;
     }
 
+	protected function getMaster()
+	{
+		return $this->master_thread;
+	}
+
     //И создал Бог Адама по образу и подобию своему...
-    public function spawn_child($_before_function = FALSE,$_runtime_function = FALSE,$_after_function = FALSE)
+    public function spawn_child($_before_function = FALSE, $_runtime_function = FALSE, $_after_function = FALSE, $collection_name = Thread_Master::MAIN_COLLECTION_NAME)
     {
         $appl = clone $this;
         $_before_function = $_before_function ? array($appl,$_before_function) : FALSE;
         $_runtime_function = $_runtime_function ? array($appl,$_runtime_function) : FALSE;
         $_after_function = $_after_function ? array($appl,$_after_function) : FALSE;
 
-        return $this->master_thread->spawn_child($_before_function,$_runtime_function,$_after_function);
+        return $this->getMaster()->spawn_child($_before_function, $_runtime_function, $_after_function, $collection_name);
     }
-
-	protected function _can_spawn_child()
-	{
-		return $this->master_thread->can_spawn_child();
-	}
 
     /**
      * запись в лог от имени приложения
