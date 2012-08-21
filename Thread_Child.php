@@ -52,7 +52,7 @@ class Thread_Child extends Thread
     /**
      * передаем ссылку на приложение
      */
-    public function set_application($appl)
+    public function setApplication(Application_Base $_appl)
     {
         $this->appl = clone $appl;
     }
@@ -61,7 +61,7 @@ class Thread_Child extends Thread
     /**
      * Устанавливаем функцию, которая будет выполнятся до главного цикла
      */
-    public function set_before_function($_function)
+    public function setRunBeforeFunction($_function)
     {
         if(is_callable($_function))
         {
@@ -73,7 +73,7 @@ class Thread_Child extends Thread
     /**
      * ... в главном цикле
      */
-    public function set_runtime_function($_function)
+    public function setRunFunction($_function)
     {
         if(is_callable($_function))
         {
@@ -85,7 +85,7 @@ class Thread_Child extends Thread
     /**
      * ... после главного цикла
      */
-    public function set_after_function($_function)
+    public function setRunAfterFunction($_function)
     {
         if(is_callable($_function))
         {

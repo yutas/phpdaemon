@@ -72,7 +72,7 @@ class Thread_Collection
 	/**
 	 * удаляем запись из коллекции при завершении работы дочернего процесса
 	 */
-	public function delete_spawn($_spawn_id)
+	public function deleteSpawn($_spawn_id)
 	{
 		if(intval($_spawn_id) && ! empty($this->threads[intval($_spawn_id)]))
 		{
@@ -82,7 +82,7 @@ class Thread_Collection
 		return false;
 	}
 
-	public function can_spawn_child()
+	public function canSpawnChild()
 	{
 		return $this->getNumber() < $this->child_limit;
 	}

@@ -4,8 +4,12 @@ include_once "Thread.php";
 include_once "Thread_Master.php";
 include_once "Thread_Child.php";
 include_once "Thread_Collection.php";
+include_once "IApplication.php";
+include_once "Application.php";
 include_once "Application_Base.php";
 include_once "Application_Base_DB.php";
+include_once "Exception_Daemon.php";
+include_once "Exception_Application.php";
 
 /**
  * Демон состоит из двух частей:
@@ -21,11 +25,8 @@ class Daemon
 
     public static $pid;
     public static $pidfile;
-    protected $runmode = FALSE;
-    public static $daemon_name = FALSE;                 //имя демона, которое определяет имя лог-файла: "<имя демона>.log"
-	protected $appl_name = '';
-    public static $settings = array(                    //настройки демона
-        'max_child_count' => 20,                        //максимальное количество тредов
+    protected static $daemon_name = FALSE;                 //имя демона, которое определяет имя лог-файла: "<имя демона>.log"
+    protected static $settings = array(                    //настройки демона
         'daemonize' => true,                            //демонизировать или нет
         'logs_verbose' => 1,                            //степерь подробности логирования
         'logs_to_stderr' => false,                      //выводить сообщения в STDERR
@@ -34,65 +35,71 @@ class Daemon
         'pid_dir' => '/var/run',                        //папка для хранения pid-файла
         'log_dir' => '/var/tmp',                        //папка для хранения log-файла
     );
-    protected static $help_message =	"usage: %s {start|stop|restart|check} ...\n
-\t-a  -  keep daemon alive (don't daemonize)
-\t-v  -  verbose
-\t-o  -  output logs to STDERR
-\t-m  -  max child count
-\t-h  -  print this help information and exit
-\n";
+    protected static $help_message;
 
-    protected $args = array('daemon' => array(),'appl' => array());  //параметры, передаваемые демону в командной строке или в методе Daemon::init()
-    protected $master;                           //класс главного процесса
-    protected $appl = FALSE;                     //выполняемое приложение
-	protected $args_string_pattern = "#^\b(?<runmode>start|stop|restart|check)\b\s+(?<args_string>.*)$#";
+    protected static $runmode = FALSE;
+	protected static $appl_name = '';
+    protected static $args = array('daemon' => array(),'appl' => array());  //параметры, передаваемые демону в командной строке или в методе Daemon::init()
+    protected static $master;                           //класс главного процесса
+    protected static $appl = FALSE;                     //выполняемое приложение
+	protected static $args_string_pattern = "#^\b(?<runmode>start|stop|restart|check)\b\s*(?<args_string>.*)?$#";
 
     protected static $logpointer;                       //указатель на файл логов
     protected static $logs_to_stderr;                   //указатель на файл логов
 
+
     /**
      * инициализация демона и его входных параметров
      */
-    public function init($_settings)
+    protected static function init($_settings, Application_Base $_appl)
     {
         //объединяем параметры, переданные через командную строку и через $_settings
         //порядок переопределения параметров при совпадении ключей по приоритету:
         //  1. Атрибуты класса
         //  2. $_settings переопределяет атрибуты класса
         //  3. Командная строка переопределяет $_settings
-        $this->args = $this->get_args( $this->parse_args_string( implode(' ', array_slice($_SERVER['argv'],1) ) ) );
-        $this->args['daemon'] = array_merge(isset($_settings['daemon']) && is_array($_settings['daemon'])?$_settings['daemon']:array(),$this->args['daemon']);
-        $this->args['appl'] = array_merge(isset($_settings['appl']) && is_array($_settings['appl'])?$_settings['appl']:array(),$this->args['appl']);
+        static::$args = static::getArgs( static::parseArgsString( implode(' ', array_slice($_SERVER['argv'],1) ) ) );
+        static::$args['daemon'] = array_merge(isset($_settings['daemon']) && is_array($_settings['daemon'])?$_settings['daemon']:array(),static::$args['daemon']);
+        static::$args['appl'] = array_merge(isset($_settings['appl']) && is_array($_settings['appl'])?$_settings['appl']:array(),static::$args['appl']);
+
+		static::generateHelpMessage($_appl);
 
         //инициализируем входные параметры демона
-        $this->apply_args($this->args['daemon']);
+        static::applyArgs(static::$args['daemon']);
 
         //задаем имя демону
-        $this->set_name(isset($this->args['daemon']['name']) ? $this->args['daemon']['name'] : basename($_SERVER['argv'][0]));
+        static::setName(isset(static::$args['daemon']['name']) ? static::$args['daemon']['name'] : basename($_SERVER['argv'][0]));
 
         //открываем лог файл
-        $this->open_logs();
+        static::openLogs();
 
         //создаем pid-файл или берем из него значение pid процесса, если он уже существует
-        $this->get_pid();
+        static::getPid();
     }
 
-    /**
-     * задает исполняемое приложение
-     * приложение должно наследовать Application_Base
-     */
-    public function set_application(Application_Base $_appl)
-    {
-        $this->appl = $_appl;
 
-        //инициализируем параметры приложения
-        $this->appl->apply_settings($this->args['appl']);
-    }
+	public static function getSettings($param = null)
+	{
+		if( ! empty($param)) {
+			if(isset(static::$settings[$param])) {
+				return static::$settings[$param];
+			} else {
+				throw new Exception_Daemon("Undefined settings parameter \"".$param."\"");
+			}
+		}
+		return static::$settings;
+	}
+
+
+	public static function getName()
+	{
+		return static::$daemon_name;
+	}
 
     /**
      * инициализируем имя демона
      */
-    public function set_name($_pname = null)
+    public static function setName($_pname = null)
     {
         static::$daemon_name = strtolower($_pname ? $_pname : 'phpd');
     }
@@ -100,21 +107,23 @@ class Daemon
     /**
      * запускаем, останавливаем или перезапускаем демон в зависимости от $runmode
      */
-    public function run(Application_Base $_appl)
+    public static function run(array $_settings = array(), Application_Base $_appl = null)
     {
-        if($this->runmode == 'start') {
-            $this->start($_appl);
-        } elseif($this->runmode == 'stop') {
+		static::init($_settings,$_appl);
+
+        if(static::$runmode == 'start') {
+            static::start($_appl);
+        } elseif(static::$runmode == 'stop') {
 			$stop_mode = 1;
-			if(isset(self::$settings['f']) && self::$settings['f'] == TRUE)
+			if(isset(static::$settings['f']) && static::$settings['f'] == TRUE)
 			{
 				$stop_mode = 2;
 			}
-            $this->stop($stop_mode);
-        } elseif($this->runmode == 'restart') {
-            $this->restart($_appl);
-		} elseif($this->runmode == 'check') {
-			if($this->check()) {
+            static::stop($stop_mode);
+        } elseif(static::$runmode == 'restart') {
+            static::restart($_appl);
+		} elseif(static::$runmode == 'check') {
+			if(static::check()) {
 				exit(0);
 			} else {
 				exit(1);
@@ -125,105 +134,107 @@ class Daemon
     /**
      * собсна, запускаем демон
      */
-    public function start(Application_Base $_appl)
+    public static function start(Application_Base $_appl)
     {
-        $this->log('starting '.static::$daemon_name.'...',1,TRUE);
-        //инициализируем исполняемое приложение
-        $this->set_application($_appl);
-        if ($this->check()) {
-            $this->log('[START] phpd with pid-file \'' . self::$pidfile . '\' is running already (PID ' . self::$pid . ')',1,TRUE);
+        static::log('starting '.static::getName().'...',1,TRUE);
+
+        if (static::check()) {
+            static::log('[START] phpd with pid-file \'' . static::$pidfile . '\' is running already (PID ' . static::$pid . ')',1,TRUE);
             exit;
         }
 
+        //инициализируем параметры приложения
+        $_appl->applySettings(static::$args['appl']);
+
         //создаем главный процесс
-        $this->master = new Thread_Master();
+        $master = new Thread_Master();
 
         //передаем приложению ссылку на мастерский процесс
-        $this->appl->set_master_thread($this->master);
+        $_appl->setMasterThread($master);
 
         //... а мастерскому процессу ссылку на приложение
-        $this->master->set_application($this->appl);
+        $master->setApplication($_appl);
 
         //запускаем мастерский процесс
-        self::$pid = $this->master->start();
-        if(-1 === self::$pid)
+        static::$pid = $master->start();
+        if(-1 === static::$pid)
         {
-            $this->log('could not start master');
+            static::log('could not start master');
             exit(1);
         }
     }
 
 
-	public function restart(Application_Base $_appl)
+	public static function restart(Application_Base $_appl)
 	{
-		$this->stop();
+		static::stop();
 		sleep(1);
-		$this->start($_appl);
+		static::start($_appl);
 	}
 
 
-	public function check()
+	public static function check()
 	{
-		return self::$pid && posix_kill(self::$pid, 0);
+		return static::$pid && posix_kill(static::$pid, 0);
 	}
 
 
     /**
      * останавливаем демон
      */
-    public function stop($mode = 1)
+    public static function stop($mode = 1)
     {
-        $this->log('Stoping '.static::$daemon_name.' (PID ' . self::$pid . ') ...',1,TRUE);
-        $ok = self::$pid && posix_kill(self::$pid, $mode === 2 ? SIGINT : SIGTERM);
+        static::log('Stoping '.static::getName().' (PID ' . static::$pid . ') ...',1,TRUE);
+        $ok = static::$pid && posix_kill(static::$pid, $mode === 2 ? SIGINT : SIGTERM);
         if (!$ok) {
-            $this->log('Error: it seems that daemon is not running' . (self::$pid ? ' (PID ' . self::$pid . ')' : ''),1,TRUE);
-			file_put_contents(self::$pidfile, '');
+            static::log('Error: it seems that daemon is not running' . (static::$pid ? ' (PID ' . static::$pid . ')' : ''),1,TRUE);
+			file_put_contents(static::$pidfile, '');
         }
-        self::$pid = 0;
+        static::$pid = 0;
     }
 
     /**
      * разбираемся с pid-файлом
      */
-    public function get_pid()
+    public static function getPid()
     {
-        self::$pidfile = rtrim(self::$settings['pid_dir'],'/').'/'.static::$daemon_name.'.pid';
+        static::$pidfile = rtrim(static::$settings['pid_dir'],'/').'/'.static::getName().'.pid';
 
-        if (!file_exists(self::$pidfile))   //если pid-файла нет
+        if (!file_exists(static::$pidfile))   //если pid-файла нет
         {
-            if (!touch(self::$pidfile))     //и его нельзя создать
+            if (!touch(static::$pidfile))     //и его нельзя создать
             {
-                $this->log('Couldn\'t create or find pid-file \'' . self::$pidfile . '\'',1,TRUE);       //пишем ошибку в лог
-                self::$pid = FALSE;
+                static::log('Couldn\'t create or find pid-file \'' . static::$pidfile . '\'',1,TRUE);       //пишем ошибку в лог
+                static::$pid = FALSE;
             }
             else
             {
-                self::$pid = 0;                 //если можно создать - все в порядке
+                static::$pid = 0;                 //если можно создать - все в порядке
             }
         }
-        elseif (!is_file(self::$pidfile))   //если это не файл вообще, а папка, к примеру
+        elseif (!is_file(static::$pidfile))   //если это не файл вообще, а папка, к примеру
         {
-            $this->log('Pid-file \'' . self::$pidfile . '\' must be a regular file',1,TRUE); //пишем ошибку в лог
-            self::$pid = FALSE;
+            static::log('Pid-file \'' . static::$pidfile . '\' must be a regular file',1,TRUE); //пишем ошибку в лог
+            static::$pid = FALSE;
         }
-        elseif (!is_writable(self::$pidfile))   //если файл недоступен для записи
+        elseif (!is_writable(static::$pidfile))   //если файл недоступен для записи
         {
-            $this->log('Pid-file \'' . self::$pidfile . '\' must be writable',1,TRUE);           //пишем ошибку в лог
-            self::$pid = FALSE;
+            static::log('Pid-file \'' . static::$pidfile . '\' must be writable',1,TRUE);           //пишем ошибку в лог
+            static::$pid = FALSE;
         }
-        elseif (!is_readable(self::$pidfile))   //если файл недоступен для чтения
+        elseif (!is_readable(static::$pidfile))   //если файл недоступен для чтения
         {
-            $this->log('Pid-file \'' . self::$pidfile . '\' must be readable',1,TRUE);           //пишем ошибку в лог
-            self::$pid = FALSE;
+            static::log('Pid-file \'' . static::$pidfile . '\' must be readable',1,TRUE);           //пишем ошибку в лог
+            static::$pid = FALSE;
         }
         else
         {
-            self::$pid = (int)file_get_contents(self::$pidfile);    //если файл есть, то берем оттуда pid работающего процесса
+            static::$pid = (int)file_get_contents(static::$pidfile);    //если файл есть, то берем оттуда pid работающего процесса
         }
 
-        if(self::$pid === FALSE)        //прерываем выполнение, если возникала ошибка
+        if(static::$pid === FALSE)        //прерываем выполнение, если возникала ошибка
         {
-            $this->log('Exits',1,TRUE);
+            static::log('Exits',1,TRUE);
             exit();
         }
 
@@ -232,42 +243,42 @@ class Daemon
     /**
      * открываем лог-файл
      */
-    public static function open_logs()
+    public static function openLogs()
     {
         //имя файла логов
-        self::$settings['logstorage'] = self::$settings['log_dir'].'/'.static::$daemon_name.'.log';
-        if (self::$logpointer) {            //если он был ранее открыт, сперва его закроем
-            fclose(self::$logpointer);
-            self::$logpointer = FALSE;
+        static::$settings['logstorage'] = static::$settings['log_dir'].'/'.static::getName().'.log';
+        if (static::$logpointer) {            //если он был ранее открыт, сперва его закроем
+            fclose(static::$logpointer);
+            static::$logpointer = FALSE;
         }
-		self::$logpointer = fopen(self::$settings['logstorage'], 'a+');
+		static::$logpointer = fopen(static::$settings['logstorage'], 'a+');
     }
 
     /**
      * добавляем запись в лог от имени демона
      */
-    public function log($_msg,$_verbose = 1,$_to_stderr = FALSE)
+    public static function log($_msg,$_verbose = 1,$_to_stderr = FALSE)
     {
-        if($_verbose <= self::$settings['logs_verbose'])        //если уровень подробности записи не выше ограничения в настройках
+        if($_verbose <= static::$settings['logs_verbose'])        //если уровень подробности записи не выше ограничения в настройках
         {
-            $this->log_with_sender($_msg,'DAEMON',$_to_stderr);
+            static::logWithSender($_msg,'DAEMON',$_to_stderr);
         }
     }
 
     /**
      * добавляем запись в лог от имени $_sender
      */
-    public function log_with_sender($_msg,$_sender = 'nobody',$_to_stderr = FALSE)
+    public static function logWithSender($_msg,$_sender = 'nobody',$_to_stderr = FALSE)
     {
         $mt = explode(' ', microtime());
-        if ( ($_to_stderr || self::$logs_to_stderr) && defined('STDERR'))   //если в настройках определен вывод в STDERR
+        if ( ($_to_stderr || static::$logs_to_stderr) && defined('STDERR'))   //если в настройках определен вывод в STDERR
         {
             //выводим логи еще и в управляющий терминал
             fwrite(STDERR, '['.strtoupper($_sender).'] ' . $_msg . "\n");
         }
-        if (self::$logpointer)                          //если файл логов был открыт без ошибок
+        if (static::$logpointer)                          //если файл логов был открыт без ошибок
         {
-            fwrite(self::$logpointer, '[' . date('D, j M Y H:i:s', $mt[1]) . '.' . sprintf('%06d', $mt[0] * 1000000) . ' ' . date('O') . '] ['.strtoupper($_sender).'] ' . $_msg . "\n");
+            fwrite(static::$logpointer, '[' . date('D, j M Y H:i:s', $mt[1]) . '.' . sprintf('%06d', $mt[0] * 1000000) . ' ' . date('O') . '] ['.strtoupper($_sender).'] ' . $_msg . "\n");
         }
     }
 
@@ -280,7 +291,7 @@ class Daemon
      * аргументы для приложения передаются таким образом: --argument=value
      * аргументы для демона: -a value
      */
-    public function get_args($args)
+    public static function getArgs($args)
     {
         $out = array('daemon' => array(),'appl' => array());
         $last_arg = NULL;
@@ -310,16 +321,16 @@ class Daemon
         return $out;
     }
 
-	protected function parse_args_string($args_string = '')
+	protected static function parseArgsString($args_string = '')
 	{
 		$matches = array();
 		$args = array();
         //инициализируем runmode
-		if(preg_match($this->args_string_pattern,$args_string,$matches)) {
-			$this->runmode = $matches['runmode'];
+		if(preg_match(static::$args_string_pattern,$args_string,$matches)) {
+			static::$runmode = $matches['runmode'];
 			$args = explode(' ',$matches['args_string']);
 		} else {
-			$this->runmode = false;
+			static::$runmode = false;
 		}
 
 		return $args;
@@ -330,67 +341,76 @@ class Daemon
     /**
      * инициализируем параметры демона
      */
-    public function apply_args($_args)
+    public static function applyArgs($_args)
     {
         //мерджим настройки из файла запуска
-        self::$settings = array_merge(self::$settings,$_args);
+        static::$settings = array_merge(static::$settings,$_args);
 
         //если непонятно, что делать, показываем хелп и выходим
-        if(empty($this->runmode))
+        if(empty(static::$runmode))
         {
-            $this->show_help();
+            static::showHelp();
             exit;
         }
 
         //show help
         if(isset($_args['h']) && $_args['h'] === TRUE)
         {
-            $this->show_help();
+            static::showHelp();
             exit;
         }
 
         //verbose
         if(isset($_args['v']) && intval($_args['v']) )
         {
-            self::$settings['logs_verbose'] = 2;
-			unset(self::$settings['v']);
+            static::$settings['logs_verbose'] = 2;
+			unset(static::$settings['v']);
         }
 
         //don't daemonize
         if(isset($_args['a']) && $_args['a'] === TRUE)
         {
-            self::$settings['daemonize'] = FALSE;
-			unset(self::$settings['a']);
+            static::$settings['daemonize'] = FALSE;
+			unset(static::$settings['a']);
         }
 
         //outputs all logs to STDERR
         if(isset($_args['o']) && $_args['o'] === TRUE)
         {
-            self::$settings['logs_to_stderr'] = TRUE;
-			unset(self::$settings['o']);
+            static::$settings['logs_to_stderr'] = TRUE;
+			unset(static::$settings['o']);
         }
 
-        //max child count
-        if(isset($_args['m']) && intval($_args['m']))
-        {
-            self::$settings['max_child_count'] = intval($_args['m']);
-			unset(self::$settings['m']);
-        }
-		self::$logs_to_stderr = self::$settings['logs_to_stderr'];
+		static::$logs_to_stderr = static::$settings['logs_to_stderr'];
     }
 
 
     //выводит справку, если демону передали параметр -h
-    public function show_help()
+    public static function showHelp()
     {
-		printf(static::$help_message,static::$daemon_name);
+		printf(static::$help_message,basename($_SERVER['argv'][0]));
     }
 
 
-	public function set_help_message($str)
+	public static function setHelpMessage($str)
 	{
-		$this->help_message = $str;
+		static::$help_message = $str;
 	}
 
+	public static function generateHelpMessage(Application_Base $_appl = null)
+	{
+		static::$help_message .= "usage: ./%s   {start|stop|restart|check}   <settings>".PHP_EOL.PHP_EOL.
+								"\tDaemon settings:".PHP_EOL.
+								"\t-a  -  keep daemon alive (don't daemonize)".PHP_EOL.
+								"\t-v  -  verbose daemon logs".PHP_EOL.
+								"\t-o  -  output logs to STDERR".PHP_EOL.
+								"\t-h  -  print this help information and exit".PHP_EOL;
+		if($_appl)
+		{
+			static::$help_message .= "\n\tApplication settings:\n";
+			$appl_class = get_class($_appl);
+			static::$help_message .= $appl_class::getHelpMessage();
+		}
+	}
 
 }

@@ -40,16 +40,6 @@ class Common_Daemon_Appl extends Application_Base
 	}
 
 
-	public static function get_settings()
-	{
-		return array_merge(parent::get_settings(), static::$settings);
-	}
-
-	public static function get_settings_desc()
-	{
-		return array_merge(parent::get_settings_desc(), static::$settings_desc);
-	}
-
 	public static function get_help()
 	{
 		$settings_desc = self::get_settings_desc();

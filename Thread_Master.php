@@ -19,7 +19,7 @@ class Thread_Master extends Thread
      */
     public function start()
     {
-        if(Daemon::$settings['daemonize'])          //если стоит флаг демонизации
+        if(Daemon::getSettings('daemonize'))          //если стоит флаг демонизации
         {
             $pid = pcntl_fork();                    //форкаем текущий процесс
             if ($pid === - 1) {
@@ -47,7 +47,8 @@ class Thread_Master extends Thread
                     $this->log('Cannot assign ' . $name . ' signal');
                 }
             }
-			$this->addChildCollection(self::MAIN_COLLECTION_NAME, Daemon::$settings['max_child_count']);		//создаем коллекцию для дочерних процессов
+			$appl_class = get_class($this->appl);
+			$this->addChildCollection(self::MAIN_COLLECTION_NAME, $appl_class::getSettings('max_child_count'));		//создаем коллекцию для дочерних процессов
             $this->run();																						//собсна, активные действия процесса
             $this->shutdown();																					//завершаем процесс
         }
@@ -76,36 +77,29 @@ class Thread_Master extends Thread
         ));
 
         //выполняем функцию приложения до рабочего цикла
-        $this->appl->before_runtime();
+        $this->appl->runBefore();
 
         //самый главный цикл
         while (TRUE) {
-            if(TRUE === $this->appl->master_runtime())      //если функция вернула TRUE
+            if(TRUE === $this->appl->run())      //если функция вернула TRUE
             {
                 //прекращаем цикл
                 break;
             }
             //ожидаем заданное время для получения сигнала операционной системы
-            $this->sigwait(Daemon::$settings['sigwait_sec'],Daemon::$settings['sigwait_nano']);
+            $this->sigwait(Daemon::getSettings('sigwait_sec'),Daemon::getSettings('sigwait_nano'));
 
             //если сигнал был получен, вызываем связанную с ним функцию
             pcntl_signal_dispatch();
         }
 
         //выполняем функцию приложения после рабочего цикла
-        $this->appl->after_runtime();
+        $this->appl->runAfter();
     }
 
 
 
 
-    /**
-     * инициализируем выполняемое приложение
-     */
-    public function set_application(Application_Base $_appl)
-    {
-        $this->appl = clone $_appl;
-    }
 
     /**
      * создаем дочерний процесс и определяем выполняемые в нем функции
@@ -116,21 +110,21 @@ class Thread_Master extends Thread
      * @param <user_function> $_after_function
      * @return $pid
      */
-    public function spawn_child($_before_function = FALSE,$_runtime_function = FALSE,$_after_function = FALSE, $collection_name = self::MAIN_COLLECTION_NAME)
+    public function spawnChild($_before_function = FALSE,$_runtime_function = FALSE,$_after_function = FALSE, $collection_name = self::MAIN_COLLECTION_NAME)
     {
-        if($this->can_spawn_child($collection_name))     //если еще есть свободные места для дочерних процессов
+        if($this->canSpawnChild($collection_name))     //если еще есть свободные места для дочерних процессов
         {
             //переоткрываем логи (вдруг файл лога удалили)
-            Daemon::open_logs();
+            Daemon::openLogs();
             //увеличиваем счетчик
             ++$this->child_count;
             $this->log('Spawning a child',2);
             $thread = new Thread_Child;
 
             //инициализируем функции
-            $thread->set_runtime_function($_runtime_function);
-            $thread->set_before_function($_before_function);
-            $thread->set_after_function($_after_function);
+            $thread->setRunFunction($_runtime_function);
+            $thread->setRunBeforeFunction($_before_function);
+            $thread->setRunAfterFunction($_after_function);
 
             //запускаем процесс
             $pid = $thread->start();
@@ -178,7 +172,7 @@ class Thread_Master extends Thread
 				$this->log('"'.$name.'" collection: '.$collection->getNumber().' of child threads remaining...');
 				while($collection->getNumber() > 0)
 				{
-					$this->sigwait(Daemon::$settings['sigwait_sec'],Daemon::$settings['sigwait_nano']);
+					$this->sigwait(Daemon::getSettings('sigwait_sec'),Daemon::getSettings('sigwait_nano'));
 					continue;
 				}
 			}
@@ -199,7 +193,7 @@ class Thread_Master extends Thread
         if ($pid > 0) {
             //удаляем этот процесс из коллекции
             foreach($this->child_collections as $collection) {
-				if($collection->delete_spawn($pid)) {
+				if($collection->deleteSpawn($pid)) {
 					break;
 				}
             }
@@ -208,9 +202,9 @@ class Thread_Master extends Thread
     }
 
 
-	public function can_spawn_child($collection_name = self::MAIN_COLLECTION_NAME)
+	public function canSpawnChild($collection_name = self::MAIN_COLLECTION_NAME)
 	{
-		return $this->child_collections[$collection_name]->can_spawn_child();
+		return $this->child_collections[$collection_name]->canSpawnChild();
 	}
 
 	/**
@@ -221,7 +215,7 @@ class Thread_Master extends Thread
 	 */
     public function sigusr1()
     {
-		return $this->appl->sigusr1_function();
+		return $this->appl->runSigUsr1();
     }
 
 	/**
@@ -232,7 +226,7 @@ class Thread_Master extends Thread
 	 */
     public function sigusr2()
     {
-		return $this->appl->siguser2_function();
+		return $this->appl->runSigUsr2();
     }
 
 

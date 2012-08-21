@@ -1,7 +1,7 @@
 <?php
 abstract class Thread
 {
-    protected $appl = FALSE;                            //выполняемое приложение
+    protected $appl;									//выполняемое приложение
     public $pid;
     protected $priority = 4;                            //приоритет процесса в ОС
     protected $thread_name = 'unnamed_thread';          //имя процесса
@@ -71,6 +71,15 @@ abstract class Thread
         SIGUSR1 => 'SIGUSR1',
         SIGUSR2 => 'SIGUSR2',
     );
+
+    /**
+     * инициализируем выполняемое приложение
+     */
+    public function setApplication(Application_Base $_appl)
+    {
+        $this->appl = clone $_appl;
+    }
+
     /* @method start
     @description Starts the process.
     @return void
@@ -245,9 +254,9 @@ abstract class Thread
      */
     public function log($_msg,$_verbose = 1)
     {
-        if($_verbose <= Daemon::$settings['logs_verbose'])
+        if($_verbose <= Daemon::getSettings('logs_verbose'))
         {
-            Daemon::log_with_sender($_msg,$this->thread_name);
+            Daemon::logWithSender($_msg,$this->thread_name);
         }
     }
 }

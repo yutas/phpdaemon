@@ -10,11 +10,8 @@ include_once "Application_Example.php";
 //входные параметры демона и приложения
 $settings = array('daemon' => array('sigwait_nano' => 1000000,'sigwait_sec' => 0,'pid_dir' => 'tmp/','log_dir' => 'tmp/') );
 
-//инициализируем параметры
-Daemon::init($settings);
-
 //инициализируем исполняемое приложение
 $appl = new Application_Example();
 
 //запускаем главный цикл
-Daemon::run($appl);
+Daemon::run($settings, $appl);
