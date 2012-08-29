@@ -25,16 +25,23 @@ class Daemon
 
     public static $pid;
     public static $pidfile;
-    protected static $daemon_name = FALSE;                 //имя демона, которое определяет имя лог-файла: "<имя демона>.log"
-    protected static $settings = array(                    //настройки демона
-        'daemonize' => true,                            //демонизировать или нет
+    protected static $daemon_name = FALSE;              //имя демона, которое определяет имя лог-файла: "<имя демона>.log"
+    protected static $settings = array(					//настройки демона
+        'alive' => true,								//демонизировать или нет
         'logs_verbose' => 1,                            //степерь подробности логирования
         'logs_to_stderr' => false,                      //выводить сообщения в STDERR
-        'sigwait_nano' => 1000000,                      //задержка выполнения runtime для ожидания управляющих сигналов операционной системы (наносекунды)
-        'sigwait_sec' => 0,                             //задержка выполнения runtime для ожидания управляющих сигналов операционной системы (секунды)
+        'sigwait' => 1000000,							//задержка выполнения runtime для ожидания управляющих сигналов операционной системы (микросекунды)
         'pid_dir' => '/var/run',                        //папка для хранения pid-файла
         'log_dir' => '/var/tmp',                        //папка для хранения log-файла
     );
+	protected static $settings_aliases = array(
+		'a' => array('alive', 'bool'),
+		'v' => array('logs_verbose', 'int'),
+		'o' => array('logs_to_stderr', 'bool'),
+		's' => array('sigwait', 'int'),
+		'p' => array('pid_dir', 'string'),
+		'l' => array('log_dir', 'string'),
+	);
     protected static $help_message;
 
     protected static $runmode = FALSE;
@@ -298,6 +305,7 @@ class Daemon
 
 		foreach($args as $arg) {
             if (preg_match('~^--(.+)~', $arg, $match)) {
+				//обрабатывает параметры вида "--param=1000"
                 $parts = explode('=', $match[1]);
                 $key = preg_replace('~[^a-z0-9_]+~', '', $parts[0]);
                 if (isset($parts[1])) {
@@ -307,15 +315,23 @@ class Daemon
                 }
                 $last_arg = $key;
             } elseif (preg_match('~^-([a-zA-Z0-9_]+)~', $arg, $match)) {
+				//обрабатывает параметры вида "-vvd" (только true/false)
                 for ($j = 0, $jl = strlen($match[1]); $j < $jl; ++$j) {
                     $key = $match[1] {
                         $j
                     };
-                    $out['daemon'][$key] = true;
+					if(empty($out['daemon'][$key])) {
+						$out['daemon'][$key] = true;
+					} else {
+						$out['daemon'][$key] = intval($out['daemon'][$key]);
+						$out['daemon'][$key]++;
+					}
                 }
                 $last_arg = $key;
-            } elseif ($last_arg !== NULL) {
+			} elseif ($last_arg !== NULL) {
+				//обрабатывает параметры вида "-s 1000"
                 $out['daemon'][$last_arg] = $arg;
+				$last_arg = NULL;
             }
         }
         return $out;
@@ -360,26 +376,15 @@ class Daemon
             exit;
         }
 
-        //verbose
-        if(isset($_args['v']) && intval($_args['v']) )
-        {
-            static::$settings['logs_verbose'] = 2;
-			unset(static::$settings['v']);
-        }
-
-        //don't daemonize
-        if(isset($_args['a']) && $_args['a'] === TRUE)
-        {
-            static::$settings['daemonize'] = FALSE;
-			unset(static::$settings['a']);
-        }
-
-        //outputs all logs to STDERR
-        if(isset($_args['o']) && $_args['o'] === TRUE)
-        {
-            static::$settings['logs_to_stderr'] = TRUE;
-			unset(static::$settings['o']);
-        }
+		foreach(static::$settings_aliases as $alias => $alias_config)
+		{
+			list($settings_name,$type) = $alias_config;
+			if( ! empty($_args[$alias]) && settype($_args[$alias], $type))
+			{
+				static::$settings[$settings_name] = $_args[$alias];
+				unset(static::$settings[$alias]);
+			}
+		}
 
 		static::$logs_to_stderr = static::$settings['logs_to_stderr'];
     }

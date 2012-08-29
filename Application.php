@@ -2,6 +2,13 @@
 
 abstract class Application
 {
-	public static function get_settings() { return array(); }
-	public static function get_settings_desc() { return array(); }
+    protected static $settings = array(
+        'asdfasd' => 1,
+    );
+
+	protected static $settings_desc = array(
+        'asdfasd' => " - some shit",
+	);
+	public static function getSettings() { return static::$settings; }
+	public static function getSettingsDesc() { return static::$settings_desc; }
 }

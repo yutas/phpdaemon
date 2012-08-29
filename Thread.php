@@ -235,10 +235,10 @@ abstract class Thread
     @param int Nanoseconds.
     @return void
     */
-    public function sigwait($sec = 0, $nano = 1)
+    public function sigwait($microsec = 1)
     {
         $siginfo = NULL;
-        $signo = pcntl_sigtimedwait(Thread::$signalsno, $siginfo, $sec, $nano);
+        $signo = pcntl_sigtimedwait(Thread::$signalsno, $siginfo, 0, $microsec*1000);
         if (is_bool($signo)) {
             return $signo;
         }

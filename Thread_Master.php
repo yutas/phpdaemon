@@ -19,7 +19,7 @@ class Thread_Master extends Thread
      */
     public function start()
     {
-        if(Daemon::getSettings('daemonize'))          //если стоит флаг демонизации
+        if( ! Daemon::getSettings('alive'))          //если стоит флаг демонизации
         {
             $pid = pcntl_fork();                    //форкаем текущий процесс
             if ($pid === - 1) {
@@ -86,8 +86,11 @@ class Thread_Master extends Thread
                 //прекращаем цикл
                 break;
             }
+
+			$this->appl->apiwait(Daemon::getSettings('sigwait'));
+
             //ожидаем заданное время для получения сигнала операционной системы
-            $this->sigwait(Daemon::getSettings('sigwait_sec'),Daemon::getSettings('sigwait_nano'));
+            $this->sigwait(Daemon::getSettings('sigwait'));
 
             //если сигнал был получен, вызываем связанную с ним функцию
             pcntl_signal_dispatch();
@@ -172,7 +175,7 @@ class Thread_Master extends Thread
 				$this->log('"'.$name.'" collection: '.$collection->getNumber().' of child threads remaining...');
 				while($collection->getNumber() > 0)
 				{
-					$this->sigwait(Daemon::getSettings('sigwait_sec'),Daemon::getSettings('sigwait_nano'));
+					$this->sigwait(Daemon::getSettings('sigwait'));
 					continue;
 				}
 			}

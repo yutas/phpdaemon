@@ -17,7 +17,10 @@ abstract class Application_Base extends Application implements IApplication
     private $master_thread = FALSE;
 
 
-    public function  __construct(){}
+	public function  __construct()
+	{
+		static::mergeSettings();
+	}
 
     public function  __clone(){}
 
