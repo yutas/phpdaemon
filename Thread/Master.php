@@ -1,5 +1,5 @@
 <?php
-namespace Daemon\Master;
+namespace Daemon\Thread;
 
 use \Daemon\Daemon as Daemon;
 use \Daemon\Thread\Thread as Thread;
@@ -9,7 +9,7 @@ use \Daemon\Thread\Collection as Thread_Collection;
 /**
  * класс описывает мастерский процесс демона
  */
-class Master extends \Daemon\Thread\Thread
+class Master extends Thread
 {
 	const MAIN_COLLECTION_NAME = 'main';
 

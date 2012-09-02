@@ -103,7 +103,7 @@ class Daemon
     /**
      * запускаем, останавливаем или перезапускаем демон в зависимости от $runmode
      */
-    public static function run(array $_settings = array(), Master\Master $_master = null, Application\Base $_appl = null)
+    public static function run(array $_settings = array(), Thread\Master $_master = null, Application\Base $_appl = null)
     {
 		try {
 			static::init($_settings,$_appl);
@@ -134,7 +134,7 @@ class Daemon
     /**
      * собсна, запускаем демон
      */
-    public static function start(Master\Master $_master = null, Application\Base $_appl)
+    public static function start(Thread\Master $_master = null, Application\Base $_appl)
     {
         static::log('starting '.static::getName().'...',1,TRUE);
 
