@@ -1,6 +1,7 @@
 <?php
+namespace Daemon\Thread;
 
-class Thread_Child extends Thread
+class Child extends Thread
 {
     protected $priority = 4;
     protected $runtime_function = FALSE;

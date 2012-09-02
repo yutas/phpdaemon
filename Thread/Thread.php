@@ -1,4 +1,8 @@
 <?php
+namespace Daemon\Thread;
+
+use \Daemon\Daemon as Daemon;
+
 abstract class Thread
 {
     protected $appl;									//выполняемое приложение
@@ -71,14 +75,6 @@ abstract class Thread
         SIGUSR1 => 'SIGUSR1',
         SIGUSR2 => 'SIGUSR2',
     );
-
-    /**
-     * инициализируем выполняемое приложение
-     */
-    public function setApplication(Application_Base $_appl)
-    {
-        $this->appl = clone $_appl;
-    }
 
     /* @method start
     @description Starts the process.

@@ -1,6 +1,7 @@
 <?php
+namespace Daemon\Thread;
 
-class Thread_Collection
+class Collection
 {
     public $threads = array();
     public $waitstatus;

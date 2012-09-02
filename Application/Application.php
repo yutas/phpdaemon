@@ -1,4 +1,5 @@
 <?php
+namespace Daemon\Application;
 
 abstract class Application
 {

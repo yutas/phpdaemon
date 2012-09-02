@@ -1,7 +1,7 @@
 <?php
-define('CONFIG_DIR','/www/api/applications/b2b/config/');
+namespace Daemon\Application;
 
-class Application_Example extends Application_Base
+class Example extends Base
 {
 	private $counter = 0;
 

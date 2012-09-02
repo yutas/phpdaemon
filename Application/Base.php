@@ -1,7 +1,9 @@
 <?php
+namespace Daemon\Application;
 
+use \Daemon\Daemon as Daemon;
 
-abstract class Application_Base extends Application implements IApplication
+abstract class Base extends Application implements IApplication
 {
 
     protected static $settings = array(
@@ -50,7 +52,7 @@ abstract class Application_Base extends Application implements IApplication
 	public function runSigUsr2(){}
 
     //инициализирует ссылку на главный процесс демона
-    public function setMasterThread(Thread_Master $master)
+    public function setMasterThread(\Daemon\Master\Master $master)
     {
         $this->master_thread = $master;
     }
@@ -61,7 +63,7 @@ abstract class Application_Base extends Application implements IApplication
 	}
 
     //И создал Бог Адама по образу и подобию своему...
-    public function spawnChild($_before_function = FALSE, $_runtime_function = FALSE, $_after_function = FALSE, $collection_name = Thread_Master::MAIN_COLLECTION_NAME)
+    public function spawnChild($_before_function = FALSE, $_runtime_function = FALSE, $_after_function = FALSE, $collection_name = \Daemon\Master\Master::MAIN_COLLECTION_NAME)
     {
         $appl = clone $this;
         $_before_function = $_before_function ? array($appl,$_before_function) : FALSE;

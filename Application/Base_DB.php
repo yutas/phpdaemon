@@ -1,6 +1,7 @@
 <?php
+namespace Daemon\Application;
 
-class Application_Base_DB extends Application_Base
+class Base_DB extends Application_Base
 {
     protected $db;                          //соединение с БД (mysqli)
     protected $db_config = array();

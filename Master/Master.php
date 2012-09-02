@@ -1,9 +1,15 @@
 <?php
+namespace Daemon\Master;
+
+use \Daemon\Daemon as Daemon;
+use \Daemon\Thread\Thread as Thread;
+use \Daemon\Thread\Child as Thread_Child;
+use \Daemon\Thread\Collection as Thread_Collection;
 
 /**
  * класс описывает мастерский процесс демона
  */
-class Thread_Master extends Thread
+class Master extends \Daemon\Thread\Thread
 {
 	const MAIN_COLLECTION_NAME = 'main';
 
@@ -87,7 +93,7 @@ class Thread_Master extends Thread
                 break;
             }
 
-			$this->appl->apiwait(Daemon::getSettings('sigwait'));
+			//$this->appl->apiwait(Daemon::getSettings('sigwait'));
 
             //ожидаем заданное время для получения сигнала операционной системы
             $this->sigwait(Daemon::getSettings('sigwait'));
@@ -142,6 +148,14 @@ class Thread_Master extends Thread
         }
     }
 
+
+    /**
+     * инициализируем выполняемое приложение
+     */
+    public function setApplication(\Daemon\Application\Base $_appl)
+    {
+        $this->appl = clone $_appl;
+    }
 
    /**
     * выполняется при завершении работы процесса

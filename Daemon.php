@@ -1,15 +1,5 @@
 <?php
-
-include_once "Thread.php";
-include_once "Thread_Master.php";
-include_once "Thread_Child.php";
-include_once "Thread_Collection.php";
-include_once "IApplication.php";
-include_once "Application.php";
-include_once "Application_Base.php";
-include_once "Application_Base_DB.php";
-include_once "Exception_Daemon.php";
-include_once "Exception_Application.php";
+namespace Daemon;
 
 /**
  * Демон состоит из двух частей:
@@ -47,7 +37,6 @@ class Daemon
     protected static $runmode = FALSE;
 	protected static $appl_name = '';
     protected static $args = array('daemon' => array(),'appl' => array());  //параметры, передаваемые демону в командной строке или в методе Daemon::init()
-    protected static $master;                           //класс главного процесса
     protected static $appl = FALSE;                     //выполняемое приложение
 	protected static $args_string_pattern = "#^\b(?<runmode>start|stop|restart|check)\b\s*(?<args_string>.*)?$#";
 
@@ -58,7 +47,7 @@ class Daemon
     /**
      * инициализация демона и его входных параметров
      */
-    protected static function init($_settings, Application_Base $_appl)
+    protected static function init($_settings, Application\Base $_appl)
     {
         //объединяем параметры, переданные через командную строку и через $_settings
         //порядок переопределения параметров при совпадении ключей по приоритету:
@@ -114,34 +103,38 @@ class Daemon
     /**
      * запускаем, останавливаем или перезапускаем демон в зависимости от $runmode
      */
-    public static function run(array $_settings = array(), Application_Base $_appl = null)
+    public static function run(array $_settings = array(), Master\Master $_master = null, Application\Base $_appl = null)
     {
-		static::init($_settings,$_appl);
+		try {
+			static::init($_settings,$_appl);
 
-        if(static::$runmode == 'start') {
-            static::start($_appl);
-        } elseif(static::$runmode == 'stop') {
-			$stop_mode = 1;
-			if(isset(static::$settings['f']) && static::$settings['f'] == TRUE)
-			{
-				$stop_mode = 2;
+			if(static::$runmode == 'start') {
+				static::start($_master, $_appl);
+			} elseif(static::$runmode == 'stop') {
+				$stop_mode = 1;
+				if(isset(static::$settings['f']) && static::$settings['f'] == TRUE)
+				{
+					$stop_mode = 2;
+				}
+				static::stop($stop_mode);
+			} elseif(static::$runmode == 'restart') {
+				static::restart($_appl);
+			} elseif(static::$runmode == 'check') {
+				if(static::check()) {
+					exit(0);
+				} else {
+					exit(1);
+				}
 			}
-            static::stop($stop_mode);
-        } elseif(static::$runmode == 'restart') {
-            static::restart($_appl);
-		} elseif(static::$runmode == 'check') {
-			if(static::check()) {
-				exit(0);
-			} else {
-				exit(1);
-			}
+		} catch(Exception $e) {
+			static::log("Caught exception of class ".get_class($e).": ".$e->getMessage(),1,true);
 		}
     }
 
     /**
      * собсна, запускаем демон
      */
-    public static function start(Application_Base $_appl)
+    public static function start(Master\Master $_master = null, Application\Base $_appl)
     {
         static::log('starting '.static::getName().'...',1,TRUE);
 
@@ -153,17 +146,14 @@ class Daemon
         //инициализируем параметры приложения
         $_appl->applySettings(static::$args['appl']);
 
-        //создаем главный процесс
-        $master = new Thread_Master();
-
         //передаем приложению ссылку на мастерский процесс
-        $_appl->setMasterThread($master);
+        $_appl->setMasterThread($_master);
 
         //... а мастерскому процессу ссылку на приложение
-        $master->setApplication($_appl);
+        $_master->setApplication($_appl);
 
         //запускаем мастерский процесс
-        static::$pid = $master->start();
+        static::$pid = $_master->start();
         if(-1 === static::$pid)
         {
             static::log('could not start master');
@@ -172,7 +162,7 @@ class Daemon
     }
 
 
-	public static function restart(Application_Base $_appl)
+	public static function restart(Application\Base $_appl)
 	{
 		static::stop();
 		sleep(1);
@@ -402,7 +392,7 @@ class Daemon
 		static::$help_message = $str;
 	}
 
-	public static function generateHelpMessage(Application_Base $_appl = null)
+	public static function generateHelpMessage(Application\Base $_appl = null)
 	{
 		static::$help_message .= "usage: ./%s   {start|stop|restart|check}   <settings>".PHP_EOL.PHP_EOL.
 								"\tDaemon settings:".PHP_EOL.
