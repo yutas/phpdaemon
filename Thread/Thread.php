@@ -250,7 +250,7 @@ abstract class Thread
      */
     public function log($_msg,$_verbose = 1)
     {
-        if($_verbose <= Daemon::getSettings('logs_verbose'))
+        if($_verbose <= Daemon::getConfig('logs_verbose'))
         {
             Daemon::logWithSender($_msg,$this->thread_name);
         }

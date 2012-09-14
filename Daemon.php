@@ -16,15 +16,15 @@ class Daemon
     public static $pid;
     public static $pidfile;
     protected static $daemon_name = FALSE;              //имя демона, которое определяет имя лог-файла: "<имя демона>.log"
-    protected static $settings = array(					//настройки демона
-        'alive' => true,								//демонизировать или нет
+    protected static $config = array(					//настройки демона
+        'alive' => false,								//запустить в терминале (не демонизировать)
         'logs_verbose' => 1,                            //степерь подробности логирования
         'logs_to_stderr' => false,                      //выводить сообщения в STDERR
         'sigwait' => 1000000,							//задержка выполнения runtime для ожидания управляющих сигналов операционной системы (микросекунды)
         'pid_dir' => '/var/run',                        //папка для хранения pid-файла
         'log_dir' => '/var/tmp',                        //папка для хранения log-файла
     );
-	protected static $settings_aliases = array(
+	protected static $config_aliases = array(
 		'a' => array('alive', 'bool'),
 		'v' => array('logs_verbose', 'int'),
 		'o' => array('logs_to_stderr', 'bool'),
@@ -47,16 +47,16 @@ class Daemon
     /**
      * инициализация демона и его входных параметров
      */
-    protected static function init($_settings, Application\Base $_appl)
+    protected static function init($_config, Application\Base $_appl)
     {
-        //объединяем параметры, переданные через командную строку и через $_settings
+        //объединяем параметры, переданные через командную строку и через $_config
         //порядок переопределения параметров при совпадении ключей по приоритету:
         //  1. Атрибуты класса
-        //  2. $_settings переопределяет атрибуты класса
-        //  3. Командная строка переопределяет $_settings
+        //  2. $_config переопределяет атрибуты класса
+        //  3. Командная строка переопределяет $_config
         static::$args = static::getArgs( static::parseArgsString( implode(' ', array_slice($_SERVER['argv'],1) ) ) );
-        static::$args['daemon'] = array_merge(isset($_settings['daemon']) && is_array($_settings['daemon'])?$_settings['daemon']:array(),static::$args['daemon']);
-        static::$args['appl'] = array_merge(isset($_settings['appl']) && is_array($_settings['appl'])?$_settings['appl']:array(),static::$args['appl']);
+        static::$args['daemon'] = array_merge(isset($_config['daemon']) && is_array($_config['daemon'])?$_config['daemon']:array(),static::$args['daemon']);
+        static::$args['appl'] = array_merge(isset($_config['appl']) && is_array($_config['appl'])?$_config['appl']:array(),static::$args['appl']);
 
 		static::generateHelpMessage($_appl);
 
@@ -74,16 +74,16 @@ class Daemon
     }
 
 
-	public static function getSettings($param = null)
+	public static function getConfig($param = null)
 	{
 		if( ! empty($param)) {
-			if(isset(static::$settings[$param])) {
-				return static::$settings[$param];
+			if(isset(static::$config[$param])) {
+				return static::$config[$param];
 			} else {
-				throw new Exception_Daemon("Undefined settings parameter \"".$param."\"");
+				throw new Exception_Daemon("Undefined config parameter \"".$param."\"");
 			}
 		}
-		return static::$settings;
+		return static::$config;
 	}
 
 
@@ -103,16 +103,16 @@ class Daemon
     /**
      * запускаем, останавливаем или перезапускаем демон в зависимости от $runmode
      */
-    public static function run(array $_settings = array(), Thread\Master $_master = null, Application\Base $_appl = null)
+    public static function run(array $_config = array(), Thread\Master $_master = null, Application\Base $_appl = null)
     {
 		try {
-			static::init($_settings,$_appl);
+			static::init($_config,$_appl);
 
 			if(static::$runmode == 'start') {
 				static::start($_master, $_appl);
 			} elseif(static::$runmode == 'stop') {
 				$stop_mode = 1;
-				if(isset(static::$settings['f']) && static::$settings['f'] == TRUE)
+				if(isset(static::$config['f']) && static::$config['f'] == TRUE)
 				{
 					$stop_mode = 2;
 				}
@@ -144,7 +144,7 @@ class Daemon
         }
 
         //инициализируем параметры приложения
-        $_appl->applySettings(static::$args['appl']);
+        $_appl->applyConfig(static::$args['appl']);
 
         //передаем приложению ссылку на мастерский процесс
         $_appl->setMasterThread($_master);
@@ -195,7 +195,7 @@ class Daemon
      */
     public static function getPid()
     {
-        static::$pidfile = rtrim(static::$settings['pid_dir'],'/').'/'.static::getName().'.pid';
+        static::$pidfile = rtrim(static::$config['pid_dir'],'/').'/'.static::getName().'.pid';
 
         if (!file_exists(static::$pidfile))   //если pid-файла нет
         {
@@ -243,12 +243,12 @@ class Daemon
     public static function openLogs()
     {
         //имя файла логов
-        static::$settings['logstorage'] = static::$settings['log_dir'].'/'.static::getName().'.log';
+        static::$config['logstorage'] = static::$config['log_dir'].'/'.static::getName().'.log';
         if (static::$logpointer) {            //если он был ранее открыт, сперва его закроем
             fclose(static::$logpointer);
             static::$logpointer = FALSE;
         }
-		static::$logpointer = fopen(static::$settings['logstorage'], 'a+');
+		static::$logpointer = fopen(static::$config['logstorage'], 'a+');
     }
 
     /**
@@ -256,7 +256,7 @@ class Daemon
      */
     public static function log($_msg,$_verbose = 1,$_to_stderr = FALSE)
     {
-        if($_verbose <= static::$settings['logs_verbose'])        //если уровень подробности записи не выше ограничения в настройках
+        if($_verbose <= static::$config['logs_verbose'])        //если уровень подробности записи не выше ограничения в настройках
         {
             static::logWithSender($_msg,'DAEMON',$_to_stderr);
         }
@@ -350,7 +350,7 @@ class Daemon
     public static function applyArgs($_args)
     {
         //мерджим настройки из файла запуска
-        static::$settings = array_merge(static::$settings,$_args);
+        static::$config = array_merge(static::$config,$_args);
 
         //если непонятно, что делать, показываем хелп и выходим
         if(empty(static::$runmode))
@@ -366,17 +366,17 @@ class Daemon
             exit;
         }
 
-		foreach(static::$settings_aliases as $alias => $alias_config)
+		foreach(static::$config_aliases as $alias => $alias_config)
 		{
-			list($settings_name,$type) = $alias_config;
+			list($config_name,$type) = $alias_config;
 			if( ! empty($_args[$alias]) && settype($_args[$alias], $type))
 			{
-				static::$settings[$settings_name] = $_args[$alias];
-				unset(static::$settings[$alias]);
+				static::$config[$config_name] = $_args[$alias];
+				unset(static::$config[$alias]);
 			}
 		}
 
-		static::$logs_to_stderr = static::$settings['logs_to_stderr'];
+		static::$logs_to_stderr = static::$config['logs_to_stderr'];
     }
 
 
@@ -394,15 +394,18 @@ class Daemon
 
 	public static function generateHelpMessage(Application\Base $_appl = null)
 	{
-		static::$help_message .= "usage: ./%s   {start|stop|restart|check}   <settings>".PHP_EOL.PHP_EOL.
-								"\tDaemon settings:".PHP_EOL.
+		static::$help_message .= "usage: ./%s   {start|stop|restart|check}   <config>".PHP_EOL.PHP_EOL.
+								"\tDaemon config:".PHP_EOL.
 								"\t-a  -  keep daemon alive (don't daemonize)".PHP_EOL.
 								"\t-v  -  verbose daemon logs".PHP_EOL.
 								"\t-o  -  output logs to STDERR".PHP_EOL.
+								"\t-s  -  sigwait time (in microseconds)".PHP_EOL.
+								"\t-p  -  directory for pid file".PHP_EOL.
+								"\t-l  -  directory for log file".PHP_EOL.
 								"\t-h  -  print this help information and exit".PHP_EOL;
 		if($_appl)
 		{
-			static::$help_message .= "\n\tApplication settings:\n";
+			static::$help_message .= "\n\tApplication config:\n";
 			$appl_class = get_class($_appl);
 			static::$help_message .= $appl_class::getHelpMessage();
 		}

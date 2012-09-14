@@ -6,12 +6,12 @@ use \Daemon\Daemon as Daemon;
 abstract class Base extends Application implements IApplication
 {
 
-    protected static $settings = array(
+    protected static $config = array(
         'verbose' => 1,
         'max_child_count' => 1,
     );
 
-	protected static $settings_desc = array(
+	protected static $config_desc = array(
         'verbose' => " - verbose application logs",
         'max_child_count' => " - maximum amount of threads",
 	);
@@ -21,18 +21,18 @@ abstract class Base extends Application implements IApplication
 
 	public function  __construct()
 	{
-		static::mergeSettings();
+		static::mergeConfig();
 	}
 
     public function  __clone(){}
 
     //инициализируем параметры, переданные через командную строку и через Daemon::init()
-    public function applySettings($_settings)
+    public function applyConfig($_conf)
     {
-		if( ! empty($_settings['verbose'])) {
-			$_settings['verbose'] = 2;
+		if( ! empty($_conf['verbose'])) {
+			$_conf['verbose'] = 2;
 		}
-        static::$settings = array_merge(static::$settings,$_settings);
+        static::$config = array_merge(static::$config,$_conf);
     }
 
     //функция, которая выполняется перед главным циклом
@@ -78,40 +78,40 @@ abstract class Base extends Application implements IApplication
      */
     public static function log($_msg,$_verbose = 1)
     {
-        if($_verbose <= (static::$settings['verbose']))
+        if($_verbose <= (static::$config['verbose']))
         {
             Daemon::logWithSender($_msg,'appl');
         }
     }
 
-	public static function mergeSettings()
+	public static function mergeConfig()
 	{
-		static::$settings = array_merge(parent::getSettings(), static::$settings);
-		static::$settings_desc = array_merge(parent::getSettingsDesc(), static::$settings_desc);
+		static::$config = array_merge(parent::getConfig(), static::$config);
+		static::$config_desc = array_merge(parent::getConfigDesc(), static::$config_desc);
 	}
 
-	public static function getSettings($param = null)
+	public static function getConfig($param = null)
 	{
 		if( ! empty($param)) {
-			if(isset(static::$settings[$param])) {
-				return static::$settings[$param];
+			if(isset(static::$config[$param])) {
+				return static::$config[$param];
 			} else {
-				throw new Exception_Application("Undefined settings parameter \"".$param."\"");
+				throw new Exception_Application("Undefined config parameter \"".$param."\"");
 			}
 		}
-		return static::$settings;
+		return static::$config;
 	}
 
-	public static function getSettingsDesc($param = null)
+	public static function getConfigDesc($param = null)
 	{
 		if( ! empty($param)) {
-			if(isset(static::$settings_desc[$param])) {
-				return static::$settings_desc[$param];
+			if(isset(static::$config_desc[$param])) {
+				return static::$config_desc[$param];
 			} else {
-				throw new Exception_Application("Undefined settings parameter \"".$param."\"");
+				throw new Exception_Application("Undefined config parameter \"".$param."\"");
 			}
 		}
-		return static::$settings_desc;
+		return static::$config_desc;
 	}
 
 
@@ -122,9 +122,9 @@ abstract class Base extends Application implements IApplication
 
 	public static function getHelpMessage()
 	{
-		$settings_desc = self::getSettingsDesc();
+		$config_desc = self::getConfigDesc();
 		$help_message = '';
-		foreach($settings_desc as $name => $desc) {
+		foreach($config_desc as $name => $desc) {
 			$help_message .= "\t--$name$desc\n";
 		}
 		return $help_message;

@@ -3,13 +3,13 @@ namespace Daemon\Application;
 
 abstract class Application
 {
-    protected static $settings = array(
+    protected static $config = array(
         'asdfasd' => 1,
     );
 
-	protected static $settings_desc = array(
+	protected static $config_desc = array(
         'asdfasd' => " - some shit",
 	);
-	public static function getSettings() { return static::$settings; }
-	public static function getSettingsDesc() { return static::$settings_desc; }
+	public static function getConfig() { return static::$config; }
+	public static function getConfigDesc() { return static::$config_desc; }
 }

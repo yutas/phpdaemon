@@ -25,7 +25,7 @@ class Master extends Thread
      */
     public function start()
     {
-        if( ! Daemon::getSettings('alive'))          //если стоит флаг демонизации
+        if( ! Daemon::getConfig('alive'))          //если стоит флаг демонизации
         {
             $pid = pcntl_fork();                    //форкаем текущий процесс
             if ($pid === - 1) {
@@ -54,7 +54,7 @@ class Master extends Thread
                 }
             }
 			$appl_class = get_class($this->appl);
-			$this->addChildCollection(self::MAIN_COLLECTION_NAME, $appl_class::getSettings('max_child_count'));		//создаем коллекцию для дочерних процессов
+			$this->addChildCollection(self::MAIN_COLLECTION_NAME, $appl_class::getConfig('max_child_count'));		//создаем коллекцию для дочерних процессов
             $this->run();																						//собсна, активные действия процесса
             $this->shutdown();																					//завершаем процесс
         }
@@ -93,10 +93,10 @@ class Master extends Thread
                 break;
             }
 
-			//$this->appl->apiwait(Daemon::getSettings('sigwait'));
+			//$this->appl->apiwait(Daemon::getConfig('sigwait'));
 
             //ожидаем заданное время для получения сигнала операционной системы
-            $this->sigwait(Daemon::getSettings('sigwait'));
+            $this->sigwait(Daemon::getConfig('sigwait'));
 
             //если сигнал был получен, вызываем связанную с ним функцию
             pcntl_signal_dispatch();
@@ -189,7 +189,7 @@ class Master extends Thread
 				$this->log('"'.$name.'" collection: '.$collection->getNumber().' of child threads remaining...');
 				while($collection->getNumber() > 0)
 				{
-					$this->sigwait(Daemon::getSettings('sigwait'));
+					$this->sigwait(Daemon::getConfig('sigwait'));
 					continue;
 				}
 			}
