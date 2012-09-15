@@ -10,9 +10,6 @@ error_reporting(E_ALL ^E_NOTICE ^E_WARNING ^E_STRICT);
 date_default_timezone_set('Europe/Minsk');
 
 include_once "autoload.php";
-Application\Example1::getHelp(); exit;
-
-
 
 class DaemonSingletonExample extends DaemonSingleton
 {

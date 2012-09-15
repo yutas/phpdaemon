@@ -6,22 +6,26 @@ use \Daemon\Daemon as Daemon;
 abstract class Base extends Application implements IApplication
 {
 
-    protected static $config = array(
+    private $config = array(
         'verbose' => 1,
         'max_child_count' => 1,
     );
 
-	protected static $config_desc = array(
+	private $config_desc = array(
         'verbose' => " - verbose application logs",
         'max_child_count' => " - maximum amount of threads",
 	);
 
     private $master_thread = FALSE;
 
-
-	public function  __construct()
+	public function  __construct($only_help = false)
 	{
-		static::mergeConfig();
+		parent::__construct($only_help);
+		if($only_help)
+		{
+			Config::add(__CLASS__, $this->config, $this->config_desc);
+			return;
+		}
 	}
 
     public function  __clone(){}
@@ -32,7 +36,7 @@ abstract class Base extends Application implements IApplication
 		if( ! empty($_conf['verbose'])) {
 			$_conf['verbose'] = 2;
 		}
-        static::$config = array_merge(static::$config,$_conf);
+        $this->config = array_merge($this->config,$_conf);
     }
 
     //функция, которая выполняется перед главным циклом
@@ -78,63 +82,45 @@ abstract class Base extends Application implements IApplication
      */
     public static function log($_msg,$_verbose = 1)
     {
-        if($_verbose <= (static::$config['verbose']))
+        if($_verbose <= ($this->config['verbose']))
         {
             Daemon::logWithSender($_msg,'appl');
         }
     }
 
-	public static function mergeConfig($parent_class = null)
-	{
-		$parent = empty($parent_class) ? get_parent_class(get_called_class()) : $parent_class;
-		var_dump(get_called_class());
-		static::$config = array_merge($parent::getConfig(), static::$config);
-		static::$config_desc = array_merge($parent::getConfigDesc(), static::$config_desc);
-	}
-
-	public static function getConfig($param = null)
+	public function getConfig($param = null)
 	{
 		if( ! empty($param)) {
-			if(isset(static::$config[$param])) {
-				return static::$config[$param];
+			if(isset($this->config[$param])) {
+				return $this->config[$param];
 			} else {
 				throw new Exception_Application("Undefined config parameter \"".$param."\"");
 			}
 		}
-		return static::$config;
+		return $this->config;
 	}
 
-	public static function getConfigDesc($param = null)
+	public function getConfigDesc($param = null)
 	{
 		if( ! empty($param)) {
-			if(isset(static::$config_desc[$param])) {
-				return static::$config_desc[$param];
+			if(isset($this->config_desc[$param])) {
+				return $this->config_desc[$param];
 			} else {
 				throw new Exception_Application("Undefined config parameter \"".$param."\"");
 			}
 		}
-		return static::$config_desc;
+		return $this->config_desc;
 	}
 
 	public static function getHelp()
 	{
-		static::mergeConfig();
-		var_dump(static::$config);
-		return parent::getHelp();
+		$app = get_called_class();
+		$object = new $app(true);
+		return Config::getHelpMessage($app);
 	}
 
     protected function shutdown()
     {
         posix_kill(posix_getpid(),SIGTERM);
     }
-
-	public static function getHelpMessage()
-	{
-		$config_desc = self::getConfigDesc();
-		$help_message = '';
-		foreach($config_desc as $name => $desc) {
-			$help_message .= "\t--$name$desc\n";
-		}
-		return $help_message;
-	}
 }

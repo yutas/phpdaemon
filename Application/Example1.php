@@ -5,20 +5,25 @@ class Example1 extends Base
 {
 	const NAME = 'example1';
 
-    protected static $config = array(
+    private $config = array(
         'test' => 1,
     );
 
-	protected static $config_desc = array(
+	private $config_desc = array(
         'test' => " - some test param",
 	);
 
 	private $counter = 0;
 
 
-	public function  __construct()
+	public function  __construct($only_help = false)
 	{
-		static::mergeConfig();
+		parent::__construct($only_help);
+		if($only_help)
+		{
+			Config::add(__CLASS__, $this->config, $this->config_desc);
+			return;
+		}
 	}
 
 	public function run()

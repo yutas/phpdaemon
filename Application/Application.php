@@ -4,21 +4,26 @@ namespace Daemon\Application;
 abstract class Application
 {
 	const NAME = '';
-    protected static $config = array(
-        'asdfasd' => 1,
-    );
+    private $config = array();
 
-	protected static $config_desc = array(
-        'asdfasd' => " - some shit",
-	);
-	public static function getConfig() { return static::$config; }
-	public static function getConfigDesc() { return static::$config_desc; }
+	private $config_desc = array();
 
-	public static function getHelp()
+	public function  __construct($only_help = false)
 	{
-		$config_desc = static::getConfigDesc();
+		if($only_help)
+		{
+			Config::add(__CLASS__, $this->config, $this->config_desc);
+			return;
+		}
+	}
+
+	public function getConfig() { return $this->config; }
+	public function getConfigDesc() { return $this->config_desc; }
+
+	public function getHelpMessage()
+	{
 		$help_message = "\tApplication \"".static::NAME."\" settings:\n";
-		foreach($config_desc as $name => $desc) {
+		foreach($this->config_desc as $name => $desc) {
 			$help_message .= "\t--$name$desc\n";
 		}
 		return $help_message;

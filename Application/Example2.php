@@ -7,6 +7,16 @@ class Example2 extends Base
 
 	private $counter = 0;
 
+	public function  __construct($only_help = false)
+	{
+		parent::__construct($only_help);
+		if($only_help)
+		{
+			Config::add(__CLASS__, array(), array(), true);
+			return;
+		}
+	}
+
 	public function run()
 	{
 		self::log("[".static::NAME."] Master runtime");
