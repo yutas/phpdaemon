@@ -12,7 +12,7 @@ date_default_timezone_set('Europe/Minsk');
 include_once "autoload.php";
 
 //входные параметры демона и приложения
-$settings = array('daemon' => array('sigwait' => 1000,'pid_dir' => 'tmp/','log_dir' => 'tmp/') );
+$settings = array('daemon' => array('sigwait' => 1,'pid_dir' => 'tmp/','log_dir' => 'tmp/') );
 
 try {
 	//инициализируем исполняемое приложение

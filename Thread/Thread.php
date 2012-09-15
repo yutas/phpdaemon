@@ -233,8 +233,8 @@ abstract class Thread
     */
     public function sigwait($microsec = 1)
     {
-        $siginfo = NULL;
-        $signo = pcntl_sigtimedwait(Thread::$signalsno, $siginfo, 0, $microsec*1000);
+        $siginfo = array();
+        $signo = pcntl_sigtimedwait(Thread::$signalsno, $siginfo, $microsec/1000);
         if (is_bool($signo)) {
             return $signo;
         }

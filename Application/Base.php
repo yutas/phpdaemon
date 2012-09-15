@@ -84,10 +84,12 @@ abstract class Base extends Application implements IApplication
         }
     }
 
-	public static function mergeConfig()
+	public static function mergeConfig($parent_class = null)
 	{
-		static::$config = array_merge(parent::getConfig(), static::$config);
-		static::$config_desc = array_merge(parent::getConfigDesc(), static::$config_desc);
+		$parent = empty($parent_class) ? get_parent_class(get_called_class()) : $parent_class;
+		var_dump(get_called_class());
+		static::$config = array_merge($parent::getConfig(), static::$config);
+		static::$config_desc = array_merge($parent::getConfigDesc(), static::$config_desc);
 	}
 
 	public static function getConfig($param = null)
@@ -114,6 +116,12 @@ abstract class Base extends Application implements IApplication
 		return static::$config_desc;
 	}
 
+	public static function getHelp()
+	{
+		static::mergeConfig();
+		var_dump(static::$config);
+		return parent::getHelp();
+	}
 
     protected function shutdown()
     {

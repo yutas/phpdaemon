@@ -47,7 +47,7 @@ class Daemon
     /**
      * инициализация демона и его входных параметров
      */
-    protected static function init($_config, Application\Base $_appl)
+    protected static function init($_config, Application\Base $_appl = null)
     {
         //объединяем параметры, переданные через командную строку и через $_config
         //порядок переопределения параметров при совпадении ключей по приоритету:
