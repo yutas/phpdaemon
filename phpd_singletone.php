@@ -22,11 +22,5 @@ class DaemonSingletonExample extends DaemonSingleton
 //входные параметры демона и приложения
 $settings = array('daemon' => array('sigwait' => 1000,'pid_dir' => 'tmp/','log_dir' => 'tmp/') );
 
-
-
-try {
-	//запускаем главный цикл
-	DaemonSingletonExample::run($settings, new Master(), null);
-} catch(Exception $e) {
-	echo "Caught exception of class ".get_class($e).": ".$e->getMessage().PHP_EOL;
-}
+//запускаем главный цикл
+DaemonSingletonExample::run($settings);

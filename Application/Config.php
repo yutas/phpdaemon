@@ -10,7 +10,7 @@ class Config
 		//class_name => $config_array
 	);
 
-	public static function add($class, array $config = array(), array $config_desc = array(), $extend = true)
+	public static function create($class, array $config = array(), array $config_desc = array(), $extend = true)
 	{
 		$parent = get_parent_class($class);
 		if(empty(static::$class_map[$class]))
@@ -38,5 +38,14 @@ class Config
 			$help_message .= "\t--$name$desc\n";
 		}
 		return $help_message;
+	}
+
+	public static function get($class)
+	{
+		if( !isset(static::$class_map[$class]))
+		{
+			Daemon::log("Appl config for class '".$class."' doesn't exist");
+		}
+		return static::$class_map[$class];
 	}
 }

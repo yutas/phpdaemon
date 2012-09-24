@@ -3,8 +3,19 @@ namespace Daemon\Application;
 
 class Example extends Base
 {
+	const NAME = 'example';
+
 	private $counter = 0;
 
+	public function  __construct($only_help = false)
+	{
+		parent::__construct($only_help);
+		Config::create(__CLASS__);
+		if($only_help)
+		{
+			return;
+		}
+	}
 
 	public function run()
 	{

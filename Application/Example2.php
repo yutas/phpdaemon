@@ -10,9 +10,9 @@ class Example2 extends Base
 	public function  __construct($only_help = false)
 	{
 		parent::__construct($only_help);
+		Config::create(__CLASS__, array(), array(), true);
 		if($only_help)
 		{
-			Config::add(__CLASS__, array(), array(), true);
 			return;
 		}
 	}

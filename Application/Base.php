@@ -8,7 +8,7 @@ abstract class Base extends Application implements IApplication
 
     private $config = array(
         'verbose' => 1,
-        'max_child_count' => 1,
+        'max_child_count' => 10,
     );
 
 	private $config_desc = array(
@@ -21,9 +21,10 @@ abstract class Base extends Application implements IApplication
 	public function  __construct($only_help = false)
 	{
 		parent::__construct($only_help);
+		Config::create(__CLASS__, $this->config, $this->config_desc);
+		list($this->config, $this->config_desc) = Config::get(__CLASS__);
 		if($only_help)
 		{
-			Config::add(__CLASS__, $this->config, $this->config_desc);
 			return;
 		}
 	}
@@ -80,7 +81,7 @@ abstract class Base extends Application implements IApplication
     /**
      * запись в лог от имени приложения
      */
-    public static function log($_msg,$_verbose = 1)
+    public function log($_msg,$_verbose = 1)
     {
         if($_verbose <= ($this->config['verbose']))
         {
@@ -90,26 +91,31 @@ abstract class Base extends Application implements IApplication
 
 	public function getConfig($param = null)
 	{
+		$app_class = get_called_class();
+		var_dump($app_class);
+		$config = Config::get($app_class)[Config::PARAMS_KEY];
 		if( ! empty($param)) {
-			if(isset($this->config[$param])) {
-				return $this->config[$param];
+			if(isset($config[$param])) {
+				return $config[$param];
 			} else {
-				throw new Exception_Application("Undefined config parameter \"".$param."\"");
+				Daemon::log("[ERROR] Undefined config parameter \"".$param."\"");
 			}
 		}
-		return $this->config;
+		return $config;
 	}
 
 	public function getConfigDesc($param = null)
 	{
+		$app_class = get_called_class();
+		$config_desc = Config::get($app_class)[Config::DESC_KEY];
 		if( ! empty($param)) {
-			if(isset($this->config_desc[$param])) {
-				return $this->config_desc[$param];
+			if(isset($config_desc[$param])) {
+				return $config_desc[$param];
 			} else {
-				throw new Exception_Application("Undefined config parameter \"".$param."\"");
+				Daemon::log("[ERROR] Undefined config parameter \"".$param."\"");
 			}
 		}
-		return $this->config_desc;
+		return $config_desc;
 	}
 
 	public static function getHelp()

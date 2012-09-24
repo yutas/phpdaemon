@@ -19,9 +19,9 @@ class Example1 extends Base
 	public function  __construct($only_help = false)
 	{
 		parent::__construct($only_help);
+		Config::create(__CLASS__, $this->config, $this->config_desc);
 		if($only_help)
 		{
-			Config::add(__CLASS__, $this->config, $this->config_desc);
 			return;
 		}
 	}

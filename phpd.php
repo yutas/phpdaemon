@@ -14,16 +14,11 @@ include_once "autoload.php";
 //входные параметры демона и приложения
 $settings = array('daemon' => array('sigwait' => 1,'pid_dir' => 'tmp/','log_dir' => 'tmp/') );
 
-try {
-	//инициализируем исполняемое приложение
-	$appl = new Appl(array(
-		'internal_api' => array('socket_filename' => '/tmp/internal_api.sock'),
-		'external_api' => array('socket_filename' => '/tmp/internal_api.sock'),
-	));
-	$master = new Master();
+//инициализируем исполняемое приложение
+$appl = new Appl(array(
+	'internal_api' => array('socket_filename' => '/tmp/internal_api.sock'),
+	'external_api' => array('socket_filename' => '/tmp/internal_api.sock'),
+));
 
-	//запускаем главный цикл
-	Daemon::run($settings, $master, $appl);
-} catch(Exception $e) {
-	echo "Caught exception of class ".get_class($e).": ".$e->getMessage().PHP_EOL;
-}
+//запускаем главный цикл
+Daemon::run($settings, $appl);

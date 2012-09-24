@@ -53,8 +53,8 @@ class Master extends Thread
                     $this->log('Cannot assign ' . $name . ' signal');
                 }
             }
-			$appl_class = get_class($this->appl);
-			$this->addChildCollection(self::MAIN_COLLECTION_NAME, $appl_class::getConfig('max_child_count'));		//создаем коллекцию для дочерних процессов
+
+			$this->addChildCollection(self::MAIN_COLLECTION_NAME, $this->appl->getConfig('max_child_count'));		//создаем коллекцию для дочерних процессов
             $this->run();																						//собсна, активные действия процесса
             $this->shutdown();																					//завершаем процесс
         }
