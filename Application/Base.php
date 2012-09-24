@@ -92,7 +92,6 @@ abstract class Base extends Application implements IApplication
 	public function getConfig($param = null)
 	{
 		$app_class = get_called_class();
-		var_dump($app_class);
 		$config = Config::get($app_class)[Config::PARAMS_KEY];
 		if( ! empty($param)) {
 			if(isset($config[$param])) {

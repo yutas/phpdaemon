@@ -96,7 +96,6 @@ class Master extends Thread
 			//$this->appl->apiwait(Daemon::getConfig('sigwait'));
 
             //ожидаем заданное время для получения сигнала операционной системы
-			//var_dump(Daemon::getConfig('sigwait')); exit;
             $this->sigwait(Daemon::getConfig('sigwait'));
 
             //если сигнал был получен, вызываем связанную с ним функцию
