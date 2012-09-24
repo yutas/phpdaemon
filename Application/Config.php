@@ -44,7 +44,7 @@ class Config
 	{
 		if( !isset(static::$class_map[$class]))
 		{
-			Daemon::log("Appl config for class '".$class."' doesn't exist");
+			Daemon::log("[ERROR] Appl config for class '".$class."' doesn't exist");
 		}
 		return static::$class_map[$class];
 	}
