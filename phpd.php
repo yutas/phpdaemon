@@ -15,10 +15,7 @@ include_once "autoload.php";
 $settings = array('daemon' => array('sigwait' => 1,'pid_dir' => 'tmp/','log_dir' => 'tmp/') );
 
 //инициализируем исполняемое приложение
-$appl = new Appl(array(
-	'internal_api' => array('socket_filename' => '/tmp/internal_api.sock'),
-	'external_api' => array('socket_filename' => '/tmp/internal_api.sock'),
-));
+$appl = new Appl();
 
 //запускаем главный цикл
 Daemon::run($settings, $appl);
