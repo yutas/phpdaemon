@@ -7,16 +7,16 @@ abstract class Base extends Application implements IApplication
 {
 
     private $config = array(
-        'verbose' => 1,
         'max_child_count' => 10,
     );
 
 	private $config_desc = array(
-        'verbose' => " - verbose application logs",
         'max_child_count' => " - maximum amount of threads",
 	);
 
-    private $master_thread = FALSE;
+    private $master_thread = false;
+
+	protected $api_support = false;
 
 	public function  __construct($only_help = false)
 	{
@@ -32,12 +32,9 @@ abstract class Base extends Application implements IApplication
     public function  __clone(){}
 
     //инициализируем параметры, переданные через командную строку и через Daemon::init()
-    public function applyConfig($_conf)
+    public function applyArgs($_conf)
     {
-		if( ! empty($_conf['verbose'])) {
-			$_conf['verbose'] = 2;
-		}
-        $this->config = array_merge($this->config,$_conf);
+		Config::add(get_called_class(), $_conf);
     }
 
     //функция, которая выполняется перед главным циклом
@@ -81,23 +78,31 @@ abstract class Base extends Application implements IApplication
     /**
      * запись в лог от имени приложения
      */
-    public function log($_msg,$_verbose = 1)
+    protected function log($_msg,$_verbose = Daemon::LL_MIN, $_to_stderr = false)
     {
-        if($_verbose <= ($this->config['verbose']))
+        if($_verbose <= Daemon::getConfig('verbose'))
         {
-            Daemon::logWithSender($_msg,'appl');
+            Daemon::logWithSender($_msg, static::NAME, $_to_stderr);
         }
     }
 
-	public function getConfig($param = null)
+	protected function logError($_msg, $_to_stderr = false)
+	{
+		$this->log("[ERROR] ".$_msg, Daemon::LL_ERROR, $_to_stderr);
+	}
+
+	public function getConfig($param = null, $default = null)
 	{
 		$app_class = get_called_class();
-		$config = Config::get($app_class)[Config::PARAMS_KEY];
+		$config = Config::get($app_class);
+		$config = $config[Config::PARAMS_KEY];
 		if( ! empty($param)) {
 			if(isset($config[$param])) {
 				return $config[$param];
+			} elseif(null !== $default) {
+				return $default;
 			} else {
-				Daemon::log("[ERROR] Undefined config parameter \"".$param."\"");
+				$this->logError("Undefined config parameter \"".$param."\"");
 			}
 		}
 		return $config;
@@ -106,12 +111,13 @@ abstract class Base extends Application implements IApplication
 	public function getConfigDesc($param = null)
 	{
 		$app_class = get_called_class();
-		$config_desc = Config::get($app_class)[Config::DESC_KEY];
+		$config_desc = Config::get($app_class);
+		$config_desc = $config_desc[Config::PARAMS_KEY];
 		if( ! empty($param)) {
 			if(isset($config_desc[$param])) {
 				return $config_desc[$param];
 			} else {
-				Daemon::log("[ERROR] Undefined config parameter \"".$param."\"");
+				$this->logError("Undefined config parameter \"".$param."\"");
 			}
 		}
 		return $config_desc;
@@ -128,4 +134,22 @@ abstract class Base extends Application implements IApplication
     {
         posix_kill(posix_getpid(),SIGTERM);
     }
+
+	/**
+	 * public function onShutdown() - is called in Master process on shutdown
+	 *
+	 * @access public
+	 * @return void
+	 */
+	public function onShutdown() {}
+
+	public function hasApiSupport()
+	{
+		return $this->api_support;
+	}
+
+	public function sendToApi()
+	{
+	}
+
 }

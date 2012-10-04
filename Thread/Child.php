@@ -1,5 +1,6 @@
 <?php
 namespace Daemon\Thread;
+use \Daemon\Daemon as Daemon;
 
 class Child extends Thread
 {
@@ -16,17 +17,17 @@ class Child extends Thread
      */
     public function run()
     {
-        $this->log('starting child (PID ' . posix_getpid() . ')....',2);
+        $this->log('starting child (PID ' . posix_getpid() . ')....', Daemon::LL_TRACE);
         proc_nice($this->priority);
         gc_enable();
 
-        if( $this->before_function !== FALSE )      //если задана функция до рабочего цикла
+        if( $this->before_function !== FALSE && is_callable($this->before_function))      //если задана функция до рабочего цикла
         {
             //выполняем ее
             call_user_func($this->before_function);
         }
 
-        if( $this->runtime_function !== FALSE )     //если задана функция рабочего цикла
+        if( $this->runtime_function !== FALSE && is_callable($this->runtime_function))     //если задана функция рабочего цикла
         {
             while (TRUE) {
                 if(TRUE === call_user_func($this->runtime_function))    //если функция вернула TRUE
@@ -35,14 +36,14 @@ class Child extends Thread
                     break;
                 }
                 //ожидаем заданное время для получения сигнала операционной системы
-                $this->sigwait(Daemon::getSettings('sigwait'));
+                $this->sigwait(Daemon::getConfig('sigwait'));
 
                 //если сигнал был получен, вызываем связанную с ним функцию
                 pcntl_signal_dispatch();
             }
         }
 
-        if( $this->after_function !== FALSE )       //если задана функция после рабочего цикла
+        if( $this->after_function !== FALSE && is_callable($this->after_function))       //если задана функция после рабочего цикла
         {
             //выполняем и ее
             call_user_func($this->after_function);
@@ -99,8 +100,8 @@ class Child extends Thread
      */
     public function shutdown()
     {
-        $this->log(getmypid() . ' is getting shutdown',1);
-        $this->log('Parent PID - '.posix_getppid(),2);
+        $this->log(getmypid() . ' is getting shutdown', Daemon::LL_DEBUG);
+        $this->log('Parent PID - '.posix_getppid(), Daemon::LL_TRACE);
         exit(0);
     }
 

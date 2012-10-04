@@ -84,7 +84,7 @@ abstract class Thread
     {
         $pid = pcntl_fork();
         if ($pid === - 1) {
-            $this->log('Could not fork');
+            $this->log('Could not fork', Daemon::LL_ERROR);
         }
         if ($pid == 0) {
             $this->pid = posix_getpid();
@@ -95,7 +95,7 @@ abstract class Thread
                 }
                 if (!pcntl_signal($no, array($this,'sighandler') , TRUE))
                 {
-                    $this->log('Cannot assign ' . $name . ' signal');
+                    $this->log('Cannot assign ' . $name . ' signal', Daemon::LL_ERROR);
                 }
             }
             $this->run();
@@ -111,15 +111,15 @@ abstract class Thread
     */
     public function sighandler($signo)
     {
-        $this->log('sighandler of process '.getmypid().' caught '.Thread::$signals[$signo],2);
+        $this->log('sighandler of process '.getmypid().' caught '.Thread::$signals[$signo], Daemon::LL_TRACE);
         if( is_callable($c = array($this,strtolower(Thread::$signals[$signo]))) )
         {
-            $this->log('sighandler '.getmypid().' calling function '.strtolower(Thread::$signals[$signo]).'()',2);
+            $this->log('sighandler '.getmypid().' calling function '.strtolower(Thread::$signals[$signo]).'()', Daemon::LL_TRACE);
             call_user_func($c);
         }
         elseif( is_callable($c = array($this,'sigunknown')) )
         {
-            $this->log('sighandler '.getmypid().' calling function sigunknown()',2);
+            $this->log('sighandler '.getmypid().' calling function sigunknown()', Daemon::LL_TRACE);
             call_user_func($c, $signo);
         }
     }
@@ -231,10 +231,12 @@ abstract class Thread
     @param int Nanoseconds.
     @return void
     */
-    public function sigwait($microsec = 1)
+    public function sigwait($millisec = 10)
     {
         $siginfo = array();
-        $signo = pcntl_sigtimedwait(Thread::$signalsno, $siginfo, $microsec/1000);
+		$sec = $millisec*1e-3 > 0 ? $millisec*1e-3 : 0;
+		$nanosec = $millisec*1e6 < 1e9 ? $millisec*1e6 : 0;
+        $signo = pcntl_sigtimedwait(Thread::$signalsno, $siginfo, $sec, $nanosec);
         if (is_bool($signo)) {
             return $signo;
         }
@@ -248,9 +250,9 @@ abstract class Thread
     /**
      * запись в лог от имени процесса
      */
-    public function log($_msg,$_verbose = 1)
+    public function log($_msg,$_verbose = Daemon::LL_MIN)
     {
-        if($_verbose <= Daemon::getConfig('logs_verbose'))
+        if($_verbose <= Daemon::getConfig('verbose'))
         {
             Daemon::logWithSender($_msg,$this->thread_name);
         }

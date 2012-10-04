@@ -31,6 +31,18 @@ class Config
 		}
 	}
 
+	public static function add($class, array $config = array(), array $config_desc = array())
+	{
+		static::$class_map[$class][self::PARAMS_KEY] = array_merge(
+			static::$class_map[$class][self::PARAMS_KEY],
+			$config
+		);
+		static::$class_map[$class][self::DESC_KEY] = array_merge(
+			static::$class_map[$class][self::DESC_KEY],
+			$config
+		);
+	}
+
 	public static function getHelpMessage($class)
 	{
 		$help_message = "\tApplication \"".$class::NAME."\" settings:\n";
@@ -44,7 +56,7 @@ class Config
 	{
 		if( !isset(static::$class_map[$class]))
 		{
-			Daemon::log("[ERROR] Appl config for class '".$class."' doesn't exist");
+			Daemon::logError("Appl config for class '".$class."' doesn't exist");
 		}
 		return static::$class_map[$class];
 	}
