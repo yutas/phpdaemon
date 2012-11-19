@@ -45,9 +45,9 @@ class Config
 
 	public static function getHelpMessage($class)
 	{
-		$help_message = "\tApplication \"".$class::NAME."\" settings:\n";
+		$help_message = "\tApplication \"".$class::NAME."\" settings:".PHP_EOL;
 		foreach(static::$class_map[$class][self::DESC_KEY] as $name => $desc) {
-			$help_message .= "\t--$name$desc\n";
+			$help_message .= "\t--$name$desc".PHP_EOL;
 		}
 		return $help_message;
 	}

@@ -12,6 +12,8 @@ use \Daemon\Utils\Helper as Helper;
 /**
  * Класс отвечает за все операции с демоном
  */
+//TODO: нужна функция дебага, которая будет выводить файл и строку, где была вызвана
+//TODO: возможно логгер нужно реализовать отдельным классом
 class Daemon
 {
 	//runmodes
@@ -32,6 +34,7 @@ class Daemon
     public static $pid;
     public static $pidfile;
     protected static $daemon_name = FALSE;              //имя демона, которое определяет имя лог-файла: "<имя демона>.log"
+	//TODO: настройки демона тоже хранить в классе Config
     protected static $config = array(					//настройки демона
         'alive' => false,								//запустить в терминале (не демонизировать)
         'verbose' => Daemon::LL_ERROR,             //степерь подробности логирования
@@ -40,6 +43,7 @@ class Daemon
         'pid_dir' => '/var/run',                        //папка для хранения pid-файла
         'log_dir' => '/var/tmp',                        //папка для хранения log-файла
     );
+	//TODO: учесть при хранении конфигов в файлах
 	protected static $config_aliases = array(
 		'a' => array('alive', 'bool'),
 		'v' => array('verbose', 'int'),
@@ -58,6 +62,7 @@ class Daemon
     protected static $logpointer;                       //указатель на файл логов
     protected static $logs_to_stderr;                   //указатель на файл логов
 
+	//TODO: а точно ли это нужно?
 	protected static $allowed_runmodes = array(
 		Daemon::RUNMODE_HELP,
 		Daemon::RUNMODE_START,
@@ -70,7 +75,7 @@ class Daemon
     /**
      * инициализация демона и его входных параметров
      */
-    protected static function init($_config, Application\Base $_appl = null)
+    protected static function init($_config, Application\IApplication $_appl = null)
     {
         //объединяем параметры, переданные через командную строку и через $_config
         //порядок переопределения параметров при совпадении ключей по приоритету:
@@ -133,7 +138,7 @@ class Daemon
     /**
      * запускаем, останавливаем или перезапускаем демон в зависимости от $runmode
      */
-    public static function run(array $_config = array(), Application\Base $_appl = null)
+    public static function run(array $_config = array(), Application\IApplication $_appl = null)
     {
 		static::init($_config, $_appl);
 		//static::logMemory(__FILE__.":".__LINE__);
@@ -160,6 +165,7 @@ class Daemon
 			static::showHelp();
 			exit;
 		} elseif(static::$runmode == Daemon::RUNMODE_API) {
+			//TODO: убрать этот RUNMODE из класса демона
 			if( ! static::$appl->hasApiSupport())
 			{
 				Daemon::logError("Application does not support Api", true);
@@ -352,11 +358,11 @@ class Daemon
         if ( ($_to_stderr || static::$logs_to_stderr) && defined('STDERR'))   //если в настройках определен вывод в STDERR
         {
             //выводим логи еще и в управляющий терминал
-            fwrite(STDERR, '['.strtoupper($_sender).'] ' . $_msg . "\n");
+            fwrite(STDERR, '['.strtoupper($_sender).'] ' . $_msg . PHP_EOL);
         }
         if (static::$logpointer)                          //если файл логов был открыт без ошибок
         {
-            fwrite(static::$logpointer, '[' . date('D, j M Y H:i:s', $mt[1]) . '.' . sprintf('%06d', $mt[0] * 1000000) . ' ' . date('O') . '] ['.strtoupper($_sender).'] ' . $_msg . "\n");
+            fwrite(static::$logpointer, '[' . date('D, j M Y H:i:s', $mt[1]) . '.' . sprintf('%06d', $mt[0] * 1000000) . ' ' . date('O') . '] ['.strtoupper($_sender).'] ' . $_msg . PHP_EOL);
         }
     }
 
@@ -461,7 +467,7 @@ class Daemon
 			printf(static::$help_message,basename($_SERVER['argv'][0]));
 		} else {
 			printf(static::$help_message,basename($_SERVER['argv'][0]));
-			echo "\n".static::$appl->getHelp();
+			echo PHP_EOL.static::$appl->getHelp();
 		}
 		echo PHP_EOL;
 	}
@@ -484,7 +490,7 @@ class Daemon
 								"\t-h  -  print this help information and exit".PHP_EOL;
 	}
 
-	public static function setApplication(Application\Base $_appl)
+	public static function setApplication(Application\IApplication $_appl)
 	{
 		static::$appl = $_appl;
 	}

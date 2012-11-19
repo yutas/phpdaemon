@@ -1,7 +1,10 @@
 <?php
-namespace Daemon\Application;
+namespace Daemon\Application\Examples;
 
-class Example2 extends Base
+use \Daemon\Application\Application;
+use \Daemon\Application\Config;
+
+class Example2 extends Application
 {
 	const NAME = 'example2';
 

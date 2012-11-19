@@ -77,6 +77,7 @@ class Master extends Thread
         gc_enable();
 
         //задаем функцию, которая будет вызываться при завершении процесса
+		//TODO: это убрать, реализовать через вызов функций при получении сигнала
         register_shutdown_function(array(
             $this,
             'onShutdown'
@@ -150,7 +151,7 @@ class Master extends Thread
     /**
      * инициализируем выполняемое приложение
      */
-    public function setApplication(\Daemon\Application\Base $_appl)
+    public function setApplication(\Daemon\Application\IApplication $_appl)
     {
         $this->appl = clone $_appl;
     }

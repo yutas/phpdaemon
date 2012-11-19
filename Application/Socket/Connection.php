@@ -3,6 +3,8 @@
 namespace Daemon\Application\Socket;
 use \Daemon\Utils\Helper as Helper;
 
+//TODO: оптимизировать и сделать более красивым соединения тредов, мастера и внешнего апи, возможно стоит трассмотреть возможность парных сокетов для каждого треда
+//TODO: изучить тонкости сокетных соединений
 class Connection
 {
 	const DELIMITER = "\n\n============\n\n";

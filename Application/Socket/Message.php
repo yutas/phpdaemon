@@ -2,6 +2,7 @@
 
 namespace Daemon\Application\Socket;
 
+//TODO: сообщение должно уметь приаттачивать любые параметры
 class Message
 {
 	const MCLASS_KEY = 'mclass';

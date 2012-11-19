@@ -9,6 +9,7 @@ use Daemon\Daemon as Daemon;
  */
 class Server extends Socket
 {
+	//TODO: номера не должны кончаться, возможно нужно использовать текущее время или md5(microtime())
 	const MAX_CONNECTION_ID = PHP_INT_MAX;
 
 	protected $resource;
@@ -16,6 +17,7 @@ class Server extends Socket
 	protected $connections = array();
 	protected $current_connection_id = 0;
 
+	//TODO: выставлять правильные права доступа на файл сокета
 	public function init()
 	{
 		if( ! ($this->resource = socket_create($this->getType(), SOCK_STREAM, 0)))

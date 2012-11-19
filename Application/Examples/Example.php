@@ -1,25 +1,19 @@
 <?php
-namespace Daemon\Application;
+namespace Daemon\Application\Examples;
 
-class Example1 extends Base
+use \Daemon\Application\Application;
+use \Daemon\Application\Config;
+
+class Example extends Application
 {
-	const NAME = 'example1';
-
-    private $config = array(
-        'test' => 1,
-    );
-
-	private $config_desc = array(
-        'test' => " - some test param",
-	);
+	const NAME = 'example';
 
 	private $counter = 0;
-
 
 	public function  __construct($only_help = false)
 	{
 		parent::__construct($only_help);
-		Config::create(__CLASS__, $this->config, $this->config_desc);
+		Config::create(__CLASS__);
 		if($only_help)
 		{
 			return;
@@ -28,7 +22,7 @@ class Example1 extends Base
 
 	public function run()
 	{
-		self::log("[".static::NAME."] Master runtime");
+		self::log("Master runtime");
 		if($this->counter < 2)		//пока значение счетчика меньше двух
 		{
 			//создаем дочерний процесс и передаем имена функций, которые будут выполняться в дочернем процессе
@@ -43,7 +37,7 @@ class Example1 extends Base
 	{
 		$x = 0;
 		while($x < 20){
-			self::log("[".static::NAME.'] child '.posix_getpid());
+			self::log('child '.posix_getpid());
 			sleep(1);
 			$x++;
 		}

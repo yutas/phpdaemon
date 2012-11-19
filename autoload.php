@@ -2,6 +2,7 @@
 
 define("FRAMEWORK_PATH",dirname(__FILE__)."/");
 
+//TODO: сделать функцию Daemon::autoload(), нужно позволить фреймворк хранить в отдельной папке
 function daemon_autoload($class)
 {
 	$filename = str_replace("\\","/",$class).".php";

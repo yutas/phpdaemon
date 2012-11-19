@@ -2,10 +2,9 @@
 <?php
 namespace Daemon;
 
-use Daemon\Application\Example as Appl;
-use Daemon\Thread\Master as Master;
+use Daemon\Application\Examples\Example as Appl;
 
-
+//TODO: постараться убрать все нотисы и варнинги
 error_reporting(E_ALL ^E_NOTICE ^E_WARNING);
 date_default_timezone_set('Europe/Minsk');
 

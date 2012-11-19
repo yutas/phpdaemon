@@ -7,6 +7,7 @@ class Collection
     public $waitstatus;
     public $spawncounter = 0;
 	private $child_limit = 0;
+	//TODO: органично встроить статические/динамические коллекции
 
 
 	public function __construct($limit)

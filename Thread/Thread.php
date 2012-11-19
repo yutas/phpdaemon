@@ -43,6 +43,7 @@ abstract class Thread
         31
     );
     public static $signals = array(
+		//TODO: обновление конфига "на лету" при получении этого сигнала
         SIGHUP => 'SIGHUP',
         SIGINT => 'SIGINT',
         SIGQUIT => 'SIGQUIT',
