@@ -1,0 +1,50 @@
+#Единый конфигурационный файл демона и приложения
+---
+Daemon:
+  alive: false              #запустить в терминале (не демонизировать)
+  verbose: Logger::L_ERROR  #степерь подробности логирования
+  sigwait: 10               #задержка выполнения runtime для ожидания управляющих сигналов операционной системы (миллисекунды)
+  pid_dir: /tmp             #папка для хранения pid-файла
+
+Application:
+  max_child_count: 10
+  verbose: Logger::L_ERROR  #степерь подробности логирования
+
+Logger:
+  log_dir: /tmp
+  logs_to_stderr: false     #выводить сообщения в STDERR
+
+
+
+
+
+
+# Алиасы для управления демоном через командную строку (также используются для вывода сообщения помощи)
+# однобуквенные параметры передаются с одним дефисом со значением через пробел: -s 10 (опущенное значение считается TRUE по-умолчанию)
+# многобуквенные параметры - с двумя дефисами со значением через знак равно: --param=10 (опущенное значение считается TRUE по-умолчанию)
+Aliases:
+  h:
+    path:
+    help: " \t\t- print this message and exit"
+  c:
+    path:
+    help: " <path> \t- path to config file"
+  a: 
+    path: Daemon.alive
+    help: " \t\t- Keep daemon alive (don't daemonize)"
+  o:
+    path: Daemon.logs_to_stderr
+    help: " \t\t- output logs to STDERR"
+  v:
+    path: Daemon.verbose
+    help: " \t\t- verbose daemon logs"
+  s: 
+    path: Daemon.sigwait
+    help: " <number> \t- sigwait time (in microseconds)"
+  p: 
+    path: Daemon.pid_dir
+    help: " <path> \t- directory for pid file"
+  l: 
+    path: Logger.log_dir
+    help: " <path> \t- directory for log file"
+...

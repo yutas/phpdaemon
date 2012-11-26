@@ -2,23 +2,13 @@
 namespace Daemon\Application\Examples;
 
 use \Daemon\Application\Application;
-use \Daemon\Application\Config;
+use \Daemon\Config;
 
 class Example extends Application
 {
 	const NAME = 'example';
 
 	private $counter = 0;
-
-	public function  __construct($only_help = false)
-	{
-		parent::__construct($only_help);
-		Config::create(__CLASS__);
-		if($only_help)
-		{
-			return;
-		}
-	}
 
 	public function run()
 	{

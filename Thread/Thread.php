@@ -85,7 +85,7 @@ abstract class Thread
     {
         $pid = pcntl_fork();
         if ($pid === - 1) {
-            $this->log('Could not fork', Daemon::LL_ERROR);
+            $this->log('Could not fork', Logger::L_ERROR);
         }
         if ($pid == 0) {
             $this->pid = posix_getpid();
@@ -96,7 +96,7 @@ abstract class Thread
                 }
                 if (!pcntl_signal($no, array($this,'sighandler') , TRUE))
                 {
-                    $this->log('Cannot assign ' . $name . ' signal', Daemon::LL_ERROR);
+                    $this->log('Cannot assign ' . $name . ' signal', Logger::L_ERROR);
                 }
             }
             $this->run();
@@ -112,15 +112,15 @@ abstract class Thread
     */
     public function sighandler($signo)
     {
-        $this->log('sighandler of process '.getmypid().' caught '.Thread::$signals[$signo], Daemon::LL_TRACE);
+        $this->log('sighandler of process '.getmypid().' caught '.Thread::$signals[$signo], Logger::L_TRACE);
         if( is_callable($c = array($this,strtolower(Thread::$signals[$signo]))) )
         {
-            $this->log('sighandler '.getmypid().' calling function '.strtolower(Thread::$signals[$signo]).'()', Daemon::LL_TRACE);
+            $this->log('sighandler '.getmypid().' calling function '.strtolower(Thread::$signals[$signo]).'()', Logger::L_TRACE);
             call_user_func($c);
         }
         elseif( is_callable($c = array($this,'sigunknown')) )
         {
-            $this->log('sighandler '.getmypid().' calling function sigunknown()', Daemon::LL_TRACE);
+            $this->log('sighandler '.getmypid().' calling function sigunknown()', Logger::L_TRACE);
             call_user_func($c, $signo);
         }
     }
@@ -251,7 +251,7 @@ abstract class Thread
     /**
      * запись в лог от имени процесса
      */
-    public function log($_msg,$_verbose = Daemon::LL_MIN)
+    public function log($_msg,$_verbose = Logger::L_MIN)
     {
         if($_verbose <= Daemon::getConfig('verbose'))
         {

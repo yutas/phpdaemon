@@ -20,16 +20,6 @@ abstract class Application implements IApplication
 
 
 	//TODO: при хранении конфигов в файлах убрать дурацкий параметр $only_help
-	public function  __construct($only_help = false)
-	{
-		Config::create(__CLASS__, $this->config, $this->config_desc);
-		list($this->config, $this->config_desc) = Config::get(__CLASS__);
-		if($only_help)
-		{
-			return;
-		}
-	}
-
     public function  __clone(){}
 
     //инициализируем параметры, переданные через командную строку и через Daemon::init()
@@ -78,7 +68,7 @@ abstract class Application implements IApplication
     /**
      * запись в лог от имени приложения
      */
-    protected function log($_msg,$_verbose = Daemon::LL_MIN, $_to_stderr = false)
+    protected function log($_msg,$_verbose = Logger::L_MIN, $_to_stderr = false)
     {
         if($_verbose <= Daemon::getConfig('verbose'))
         {
@@ -88,7 +78,7 @@ abstract class Application implements IApplication
 
 	protected function logError($_msg, $_to_stderr = false)
 	{
-		$this->log("[ERROR] ".$_msg, Daemon::LL_ERROR, $_to_stderr);
+		$this->log("[ERROR] ".$_msg, Logger::L_ERROR, $_to_stderr);
 	}
 
 	public function getConfig($param = null, $default = null)

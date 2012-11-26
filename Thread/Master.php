@@ -29,7 +29,7 @@ class Master extends Thread
         {
             $pid = pcntl_fork();                    //форкаем текущий процесс
             if ($pid === - 1) {
-                $this->log('Could not fork master process', Daemon::LL_ERROR);
+                $this->log('Could not fork master process', Logger::L_ERROR);
             }
         }
         else
@@ -50,7 +50,7 @@ class Master extends Thread
                 }
                 if (!pcntl_signal($no, array($this,'sighandler') , TRUE))
                 {
-                    $this->log('Cannot assign ' . $name . ' signal', Daemon::LL_ERROR);
+                    $this->log('Cannot assign ' . $name . ' signal', Logger::L_ERROR);
                 }
             }
 
@@ -126,7 +126,7 @@ class Master extends Thread
             Daemon::openLogs();
             //увеличиваем счетчик
             ++$this->child_count;
-            $this->log('Spawning a child', Daemon::LL_DEBUG);
+            $this->log('Spawning a child', Logger::L_DEBUG);
             $thread = new Thread_Child;
 
             //инициализируем функции
@@ -186,8 +186,8 @@ class Master extends Thread
 			$collection->stop($kill);
 			if( ! $kill) {
 				//ждем, пока не остановятся все дочерние процессы
-				$this->log('Waiting for all children of "'.$name.'" collection to shutdown...', Daemon::LL_INFO);
-				$this->log('"'.$name.'" collection: '.$collection->getNumber().' of child threads remaining...', Daemon::LL_INFO);
+				$this->log('Waiting for all children of "'.$name.'" collection to shutdown...', Logger::L_INFO);
+				$this->log('"'.$name.'" collection: '.$collection->getNumber().' of child threads remaining...', Logger::L_INFO);
 				while($collection->getNumber() > 0)
 				{
 					$this->sigwait(Daemon::getConfig('sigwait'));
@@ -262,8 +262,8 @@ class Master extends Thread
 			$collection = $this->child_collections[$name];
 			$collection->stop();
 			//ждем, пока не остановятся все дочерние процессы
-			$this->log('Waiting for all children of "'.$name.'" collection to shutdown...', Daemon::LL_INFO);
-			$this->log('"'.$name.'" collection: '.$collection->getNumber().' of child threads remaining...', Daemon::LL_INFO);
+			$this->log('Waiting for all children of "'.$name.'" collection to shutdown...', Logger::L_INFO);
+			$this->log('"'.$name.'" collection: '.$collection->getNumber().' of child threads remaining...', Logger::L_INFO);
 			while($collection->getNumber() > 0)
 			{
 				$this->sigwait(Daemon::getConfig('sigwait'));

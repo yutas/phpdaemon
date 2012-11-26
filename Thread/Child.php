@@ -17,7 +17,7 @@ class Child extends Thread
      */
     public function run()
     {
-        $this->log('starting child (PID ' . posix_getpid() . ')....', Daemon::LL_TRACE);
+        $this->log('starting child (PID ' . posix_getpid() . ')....', Logger::L_TRACE);
         proc_nice($this->priority);
         gc_enable();
 
@@ -100,8 +100,8 @@ class Child extends Thread
      */
     public function shutdown()
     {
-        $this->log(getmypid() . ' is getting shutdown', Daemon::LL_DEBUG);
-        $this->log('Parent PID - '.posix_getppid(), Daemon::LL_TRACE);
+        $this->log(getmypid() . ' is getting shutdown', Logger::L_DEBUG);
+        $this->log('Parent PID - '.posix_getppid(), Logger::L_TRACE);
         exit(0);
     }
 

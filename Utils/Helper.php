@@ -4,21 +4,39 @@ namespace Daemon\Utils;
 
 class Helper
 {
-	public static function array_get(array $array, $key = '', $default = null)
+	public static function array_get(array $array, $path = '', $default = null)
 	{
-		foreach(explode('.', $key) as $key)
-		{
-			if( ! isset($array[$key]))
-			{
-				$array = $default;
-				break;
-			}
-			else
-			{
-				$array = $array[$key];
+		if ( ! empty($path)) {
+			foreach (explode('.', $path) as $key) {
+				if ( ! isset($array[$key])) {
+					$array = $default;
+					break;
+				} else {
+					$array = $array[$key];
+				}
 			}
 		}
 		return $array;
+	}
+
+	public static function array_set(array &$array, $path, $value)
+	{
+		$a = &$array;
+		if ( ! empty($path)) {
+			$keys = explode('.', $path);
+			$depth = count($keys) - 1;
+			foreach ($keys as $key) {
+				if ( ! array_key_exists($key, $a)) {
+					$a[$key] = $depth ? array() : null;
+				} elseif($depth && ! is_array($a[$key])) {
+					$a[$key] = array();
+				}
+				$a = &$a[$key];
+				$depth--;
+			}
+		}
+		$a = $value;
+		return true;
 	}
 
 	public static function checkParams($params=array(), $rules = array()){
