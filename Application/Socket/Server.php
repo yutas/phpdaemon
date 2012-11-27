@@ -10,12 +10,8 @@ use Daemon\Daemon as Daemon;
 class Server extends Socket
 {
 	//TODO: номера не должны кончаться, возможно нужно использовать текущее время или md5(microtime())
-	const MAX_CONNECTION_ID = PHP_INT_MAX;
-
 	protected $resource;
-
 	protected $connections = array();
-	protected $current_connection_id = 0;
 
 	//TODO: выставлять правильные права доступа на файл сокета
 	public function init()
@@ -49,18 +45,17 @@ class Server extends Socket
 	private function accept_connections()
 	{
 		$new_pack = array();
-		while(true)
+		while (true)
 		{
 			$client_resource = socket_accept($this->resource);
-			if($client_resource === false) break;
-			if($this->current_connection_id == self::MAX_CONNECTION_ID)
+			if ($client_resource === false)
 			{
-				$this->current_connection_id = 0;
+				break;
 			}
-			$id = ++$this->current_connection_id;
+			$id = $this->generateId();
 			$new_pack[$id] = new Connection($client_resource, $id);
 		}
-		$this->connections = $new_pack + $this->connections;
+		$this->connections = array_merge($this->connections, $new_pack);
 	}
 
 	/**
@@ -116,5 +111,11 @@ class Server extends Socket
 		{
 			unlink($this->file);
 		}
+	}
+
+
+	public function generateId()
+	{
+		return crc32(microtime(true).md5(rand(0,1000)));
 	}
 }

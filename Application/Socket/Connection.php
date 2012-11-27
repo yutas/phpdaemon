@@ -1,7 +1,7 @@
 <?php
 
 namespace Daemon\Application\Socket;
-use \Daemon\Utils\Helper as Helper;
+use \Daemon\Utils\Helper;
 
 //TODO: оптимизировать и сделать более красивым соединения тредов, мастера и внешнего апи, возможно стоит трассмотреть возможность парных сокетов для каждого треда
 //TODO: изучить тонкости сокетных соединений
@@ -14,7 +14,7 @@ class Connection
 	private $resource;
 	private $id;
 
-	public function __construct($resource, $id = 0)
+	public function __construct($resource, $id)
 	{
 		if(get_resource_type($resource) !== self::RESOURCE_TYPE)
 		{
@@ -22,7 +22,7 @@ class Connection
 		}
 		$this->resource = $resource;
 		socket_set_nonblock($this->resource);
-		$this->id = intval($id);
+		$this->id = $id;
 	}
 
 	public function read($one = false)
