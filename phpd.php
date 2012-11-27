@@ -2,7 +2,7 @@
 <?php
 namespace Daemon;
 
-use Daemon\Application\Examples\Example as Appl;
+use Daemon\Application\Examples\Example1 as Appl;
 use Daemon\Utils\Helper;
 
 //TODO: постараться убрать все нотисы и варнинги

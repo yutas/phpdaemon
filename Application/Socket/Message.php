@@ -2,38 +2,22 @@
 
 namespace Daemon\Application\Socket;
 
-//TODO: сообщение должно уметь приаттачивать любые параметры
 class Message
 {
-	protected $message;
-
-	public function __construct($message)
+	public function toJSON()
 	{
-		$this->setMessage($message);
+		return json_encode($this);
 	}
 
-	public function __toString()
-	{
-	}
 
-	public function getConnectionId()
-	{
-		return $this->connection_id;
-	}
-
-	public function setMessage($message)
-	{
-		$this->message = (string)$message;
-	}
-
-	public function getMessage()
-	{
-		return $this->message;
-	}
-
-	public static function create($message, $connection_id = 0)
+	public static function create($json)
 	{
 		$class = get_called_class();
-		return new $class($message, $connection_id);
+		$obj = new $class();
+		foreach(json_decode($json) as $par => $val)
+		{
+			$obj->$par = $val;
+		}
+		return $obj;
 	}
 }

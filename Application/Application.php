@@ -42,14 +42,15 @@ abstract class Application implements IApplication
 		return $this->master_thread;
 	}
 
-    public function spawnChild($_before_function = FALSE, $_runtime_function = FALSE, $_after_function = FALSE, $collection_name = \Daemon\Thread\Master::MAIN_COLLECTION_NAME)
+    public function spawnChild($_before = FALSE, $_runtime = FALSE, $_after = FALSE, $_onshutdown = FALSE, $collection_name = \Daemon\Thread\Master::MAIN_COLLECTION_NAME)
     {
         $appl = clone $this;
-        $_before_function = $_before_function ? array($appl,$_before_function) : FALSE;
-        $_runtime_function = $_runtime_function ? array($appl,$_runtime_function) : FALSE;
-        $_after_function = $_after_function ? array($appl,$_after_function) : FALSE;
+        $_before = $_before ? array($appl,$_before) : FALSE;
+        $_runtime = $_runtime ? array($appl,$_runtime) : FALSE;
+        $_after = $_after ? array($appl,$_after) : FALSE;
+        $_onshutdown = $_onshutdown ? array($appl,$_onshutdown) : FALSE;
 
-        return $this->getMaster()->spawnChild($_before_function, $_runtime_function, $_after_function, $collection_name);
+        return $this->getMaster()->spawnChild($_before, $_runtime, $_after, $_onshutdown, $collection_name);
     }
 
     protected function shutdown()

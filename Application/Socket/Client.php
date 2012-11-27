@@ -18,7 +18,7 @@ class Client extends Socket
 		}
 		if( ! (socket_connect($this->resource, $this->getAddress(), $this->port)))
 		{
-			$this->throwError("Failed to connect to api server");
+			$this->throwError("Failed to connect to socket server");
 		}
 		$this->connection = new Connection($this->resource);
 	}
@@ -29,14 +29,14 @@ class Client extends Socket
 	 * @access public
 	 * @return void
 	 */
-	public function read()
+	public function listen()
 	{
 		return $this->connection->read();
 	}
 
-	public function write(Message $message)
+	public function write(Envelope $envelope)
 	{
-		$this->connection->write($message);
+		$this->connection->write($envelope);
 	}
 
 	public function shutdown()

@@ -2,6 +2,6 @@
 
 namespace Daemon\Application\Intercom\Message;
 
-class ChangeStatus extends Message
+class Farewell extends Service
 {
 }

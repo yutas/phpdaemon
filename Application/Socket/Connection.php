@@ -7,7 +7,8 @@ use \Daemon\Utils\Helper;
 //TODO: изучить тонкости сокетных соединений
 class Connection
 {
-	const DELIMITER = "\n\n============\n\n";
+	//const DELIMITER = "\n\n============\n\n";
+	const DELIMITER = "\u00C0\u00C1\u00C2\u00C3\u00C4\u00C5\u00C6\u00C7";
 	const READ_LENGTH = 102400;
 	const RESOURCE_TYPE = 'Socket';
 
@@ -25,10 +26,10 @@ class Connection
 		$this->id = $id;
 	}
 
-	public function read($one = false)
+	public function read()
 	{
 		$data = '';
-		$msg_list = array();
+		$env_list = array();
 		while($chunk = socket_read($this->resource, self::READ_LENGTH))
 		{
 			$data .= $chunk;
@@ -36,21 +37,22 @@ class Connection
 		if( ! empty($data))
 		{
 			$data = explode(self::DELIMITER, $data);
-			foreach($data as $m)
+			foreach($data as $e)
 			{
-				if( ! empty($m))
+				if( ! empty($e))
 				{
-					$msg_list[] = Message::__fromString($m, $this->id);
+					$e = Envelope::__fromString($e);
+					$e->setConnectionId($this->id);
+					$env_list[] = $e;
 				}
 			}
-			if($one) $msg_list = array_shift($msg_list);
 		}
-		return $msg_list;
+		return $env_list;
 	}
 
-	public function write(Message $message)
+	public function write(Envelope $envelope)
 	{
-		if( ! socket_write($this->resource, $message.self::DELIMITER))
+		if( ! socket_write($this->resource, $envelope.self::DELIMITER))
 		{
 			$this->throwError("Failed to write to socket");
 		}

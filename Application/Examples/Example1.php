@@ -3,59 +3,95 @@ namespace Daemon\Application\Examples;
 
 use \Daemon\Application\Application;
 use \Daemon\Application\Config;
+use \Daemon\Application\Socket\Socket;
+use \Daemon\Application\Intercom;
+use \Daemon\Application\Intercom\Message as IntercomMessage;
+use \Daemon\Application\Api;
 
 class Example1 extends Application
 {
-	const NAME = 'example1';
+	use \Daemon\Utils\LogTrait;
 
-    private $config = array(
-        'test' => 1,
-    );
-
-	private $config_desc = array(
-        'test' => " - some test param",
-	);
+	const LOG_NAME = 'example1';
 
 	private $counter = 0;
+	private $intercom;
+	private $intercom_config = array(
+		'type' => Socket::TYPE_UNIX,
+		'ip' => '127.0.0.1',
+		'port' => 30000,
+		'file' => 'tmp/intercom.sock',
+	);
+	private $api_config = array(
+		'type' => Socket::TYPE_UNIX,
+		'ip' => '127.0.0.1',
+		'port' => 30001,
+		'file' => 'tmp/api.sock',
+	);
+	private $client;
 
 
-	public function  __construct($only_help = false)
+	public function runBefore()
 	{
-		parent::__construct($only_help);
-		Config::create(__CLASS__, $this->config, $this->config_desc);
-		if($only_help)
-		{
-			return;
-		}
+		$this->intercom = new Intercom\Server($this->intercom_config);
+		$this->intercom->init();
+
+		//$this->api = new Api\Server($this->api_config);
+		//$this->api->init();
 	}
 
 	public function run()
 	{
-		self::log("[".static::NAME."] Master runtime");
+		//static::log("Master runtime");
+		if($e = $this->intercom->listen())
+		{
+			foreach($e as $envelope)
+			{
+				$message = $envelope->getMessage();
+				static::log(sprintf("Got message \"%s\"", $message->text));
+				$response = new IntercomMessage\Message();
+				$response->text = "Ответ мастера треду ".$envelope->getSender();
+				$this->intercom->send($response, $envelope->getSender());
+			}
+		}
 		if($this->counter < 2)		//пока значение счетчика меньше двух
 		{
 			//создаем дочерний процесс и передаем имена функций, которые будут выполняться в дочернем процессе
-			$this->spawnChild(FALSE,'child_main_action',FALSE);
+			$child_pid = $this->spawnChild('child_before_action', 'child_main_action', FALSE, 'onShutdown');
 		}
 		++$this->counter;
-		sleep(1);
 	}
 
 
 	public function child_main_action()
 	{
-		$x = 0;
-		while($x < 20){
-			self::log("[".static::NAME.'] child '.posix_getpid());
-			sleep(1);
-			$x++;
+		unset($this->intercom);
+		if($e = $this->client->listen())
+		{
+			foreach($e as $envelope)
+			{
+				$message = $envelope->getMessage();
+				static::log(sprintf("Got message \"%s\"", $message->text));
+			}
 		}
-		return TRUE;
+		$message = new IntercomMessage\Message();
+		$message->text = 'Тестовое сообщение от треда '.posix_getpid().' мастеру';
+		$this->client->send($message);
+		sleep(1);
+		return false;
 	}
 
 	public function child_before_action()
 	{
+		static::log("Before");
+		$this->client = new Intercom\Client($this->intercom_config);
+		$this->client->init();
+	}
 
+	public function onShutdown()
+	{
+		if($this->intercom instanceof Intercom\Server) $this->intercom->shutdown();
+		if($this->client instanceof Intercom\Client) $this->client->shutdown();
 	}
 
 }

@@ -12,7 +12,7 @@ use \Daemon\Application\Socket\Connection as SocketConnection;
 class Client extends SocketClient
 {
 	const RESPONSE_TIMEOUT = 5;	//in seconds
-	const READ_TIMEOUT = 100;		//in microseconds
+	const READ_TIMEOUT = 100;	//in microseconds
 
 	private $last_activity_time;
 
@@ -47,5 +47,10 @@ class Client extends SocketClient
 	{
 		$this->connection->write($message);
 		$this->last_activity_time = time();
+	}
+
+	public function listen()
+	{
+		throw new \BadMethodCallException();
 	}
 }

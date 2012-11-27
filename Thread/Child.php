@@ -2,6 +2,7 @@
 namespace Daemon\Thread;
 use \Daemon\Daemon as Daemon;
 use \Daemon\Utils\Logger;
+use \Daemon\Utils\Config;
 
 class Child extends Thread
 {
@@ -9,7 +10,7 @@ class Child extends Thread
     protected $runtime_function = FALSE;
     protected $before_function = FALSE;
     protected $after_function = FALSE;
-    protected $thread_name = 'child';
+    protected $onshutdown_function = FALSE;
 
     /**
      * @method run
@@ -37,7 +38,7 @@ class Child extends Thread
                     break;
                 }
                 //ожидаем заданное время для получения сигнала операционной системы
-                $this->sigwait(Daemon::getConfig('sigwait'));
+                $this->sigwait(Config::get('Daemon.sigwait'));
 
                 //если сигнал был получен, вызываем связанную с ним функцию
                 pcntl_signal_dispatch();
@@ -96,12 +97,21 @@ class Child extends Thread
         }
     }
 
+	public function setOnShutdownFunctions($_function)
+	{
+        if(is_callable($_function))
+        {
+            $this->onshutdown_function = $_function;
+        }
+	}
+
     /**
      * завершение работы
      */
     public function shutdown()
     {
-        static::log(getmypid() . ' is getting shutdown', Logger::L_DEBUG);
+		call_user_func($this->onshutdown_function);
+		static::log(getmypid() . ' is getting shutdown', Logger::L_DEBUG);
         static::log('Parent PID - '.posix_getppid(), Logger::L_TRACE);
 		parent::shutdown();
     }

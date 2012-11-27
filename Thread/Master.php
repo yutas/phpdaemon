@@ -20,7 +20,6 @@ class Master extends Thread
     protected $child_collections;            //коллекция дочерних процессов
     protected $priority = 100;              //приоритет процесса
     protected $child_count = 0;             //текущее количество подпроцессов (детей)
-    protected $thread_name = 'master';      //имя процесса (используется для логирования)
 	protected $pidfile = '';
 	protected $shutdown = false;
 
@@ -111,12 +110,12 @@ class Master extends Thread
      * создаем дочерний процесс и определяем выполняемые в нем функции
      * в качестве параметров передаются массивы в виде array(Object,'function_name')
      *
-     * @param <user_function> $_before_function
-     * @param <user_function> $_runtime_function
-     * @param <user_function> $_after_function
+     * @param <user_function> $_before
+     * @param <user_function> $_runtime
+     * @param <user_function> $_after
      * @return $pid
      */
-    public function spawnChild($_before_function = FALSE,$_runtime_function = FALSE,$_after_function = FALSE, $collection_name = self::MAIN_COLLECTION_NAME)
+    public function spawnChild($_before = FALSE, $_runtime = FALSE, $_after = FALSE, $_onshutdown = FALSE, $collection_name = self::MAIN_COLLECTION_NAME)
     {
         if($this->canSpawnChild($collection_name))     //если еще есть свободные места для дочерних процессов
         {
@@ -128,9 +127,10 @@ class Master extends Thread
             $thread = new Thread_Child;
 
             //инициализируем функции
-            $thread->setRunFunction($_runtime_function);
-            $thread->setRunBeforeFunction($_before_function);
-            $thread->setRunAfterFunction($_after_function);
+            $thread->setRunFunction($_runtime);
+            $thread->setRunBeforeFunction($_before);
+            $thread->setRunAfterFunction($_after);
+            $thread->setOnShutdownFunctions($_onshutdown);
 
             //запускаем процесс
             $pid = $thread->start();

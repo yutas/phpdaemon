@@ -11,8 +11,9 @@ class Envelope
 {
 	private $receiver;
 	private $sender;
-	private $message;
 	private $message_class;
+	private $message;
+	private $connection_id;
 
 
 	public function __construct(Message $message, $receiver, $sender)
@@ -33,20 +34,41 @@ class Envelope
 		));
 	}
 
-	public static function __fromString($message)
+	public static function __fromString($json)
 	{
-		$m = json_decode($message, true);
-		if(empty($m[self::MCLASS_KEY]))
+		if( ! ($data = json_decode($json, true)))
 		{
-			throw new \Exception("Incorrect message format: message '".$message."'");
+			throw new \Exception("Incorrect envelope format: received data - '".$json."'");
 		}
-		$mclass = $m[self::MCLASS_KEY];
-		unset($m[self::MCLASS_KEY]);
-		return $mclass::create($m['message'], $connection_id);
+
+		$message_class = $data['message_class'];
+		$message = $message_class::create($data['message']);
+		$envelope = new self($message, $data['receiver'], $data['sender']);
+		return $envelope;
 	}
 
 	public function getMessage()
 	{
-		return new $this->message_class($this->message);
+		return $this->message;
+	}
+
+	public function getReceiver()
+	{
+		return $this->receiver;
+	}
+
+	public function getSender()
+	{
+		return $this->sender;
+	}
+
+	public function getConnectionId()
+	{
+		return $this->connection_id;
+	}
+
+	public function setConnectionId($id)
+	{
+		$this->connection_id = $id;
 	}
 }

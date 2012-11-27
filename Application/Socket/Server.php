@@ -1,14 +1,18 @@
 <?php
 
 namespace Daemon\Application\Socket;
-use \Daemon\Utils\Helper as Helper;
-use Daemon\Daemon as Daemon;
+use Daemon\Daemon;
+use \Daemon\Utils\Helper;
+use \Daemon\Utils\Logger;
 
 /**
  * Класс реализует работу апи через сокеты
  */
 class Server extends Socket
 {
+	use \Daemon\Utils\LogTrait;
+	const LOG_NAME = 'Socket_Server';
+
 	//TODO: номера не должны кончаться, возможно нужно использовать текущее время или md5(microtime())
 	protected $resource;
 	protected $connections = array();
@@ -53,9 +57,10 @@ class Server extends Socket
 				break;
 			}
 			$id = $this->generateId();
-			$new_pack[$id] = new Connection($client_resource, $id);
+			static::log("Registered new connection: ".$id, Logger::L_TRACE);
+			$this->connections[$id] = new Connection($client_resource, $id);
 		}
-		$this->connections = array_merge($this->connections, $new_pack);
+		//$this->connections = $new_pack + $this->connections;
 	}
 
 	/**
@@ -75,9 +80,9 @@ class Server extends Socket
 		return $messages;
 	}
 
-	public function write(Message $message)
+	public function write(Envelope $envelope)
 	{
-		$this->getConnection($message->getConnectionId())->write($message);
+		$this->getConnection($envelope->getConnectionId())->write($envelope);
 	}
 
 	private function getConnection($id)

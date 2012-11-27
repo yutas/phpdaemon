@@ -26,10 +26,16 @@ class Logger
 		}
 	}
 
+
+	public static function logError($msg, $to_stderr = FALSE)
+	{
+		self::logWithSender($msg, 'general', $to_stderr);
+	}
+
     /**
      * добавляем запись в лог от имени $_sender
      */
-    public static function logWithSender($_msg,$_sender = 'nobody',$_to_stderr = FALSE)
+    public static function logWithSender($_msg,$_sender = 'nobody', $_to_stderr = FALSE)
     {
         $mt = explode(' ', microtime());
         if ( ($_to_stderr || Config::get('Logger.to_stderr')) && defined('STDERR'))   //если в настройках определен вывод в STDERR

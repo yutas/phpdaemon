@@ -2,6 +2,6 @@
 
 namespace Daemon\Application\Intercom\Message;
 
-class NewTask extends Message
+class Service extends Message
 {
 }

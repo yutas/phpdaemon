@@ -22,15 +22,4 @@ class Server extends SocketServer
 		$this->write($message);
 		$this->deleteConnection($message->getConnectionId());
 	}
-
-	/**
-	 * receive - receives incoming api messages
-	 *
-	 * @access public
-	 * @return void
-	 */
-	public function receive()
-	{
-		return $this->listen();
-	}
 }

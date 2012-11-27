@@ -10,7 +10,6 @@ abstract class Thread
     protected $appl;									//выполняемое приложение
     public $pid;
     protected $priority = 4;                            //приоритет процесса в ОС
-    protected $thread_name = 'unnamed_thread';          //имя процесса
     public static $signalsno = array(
         1,
         2,
