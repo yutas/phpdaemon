@@ -14,8 +14,7 @@ class Logger
 
 	protected static $filename;		//имя файла логов
     protected static $resource;		//указатель на файл логов
-	protected static $class_name_cache = array()
-;
+	protected static $class_name_cache = array();
 
 	public static function init()
 	{
@@ -64,7 +63,7 @@ class Logger
             self::$resource = FALSE;
         }
         //имя файла логов
-        self::$filename = Config::get('Logger.dir').'/'.Daemon::getName().'.log';
+        self::$filename = Config::get('Logger.log_file');
 		self::$resource = fopen(self::$filename, 'a+');
     }
 

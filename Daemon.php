@@ -71,7 +71,6 @@ class Daemon
 			{
 				static::setApplication($_appl);
 			}
-			static::log("asdfasd", 0, true);
 		} catch(\Exception $e) {
 			echo $e->getMessage().PHP_EOL;
 			exit(1);
@@ -80,28 +79,8 @@ class Daemon
 
 	public static function getName()
 	{
-		return static::$daemon_name;
+		return Config::get('Daemon.name', 'Daemon');
 	}
-
-    /**
-     * инициализируем имя демона
-     */
-    public static function setName()
-	{
-		if(isset(static::$args['daemon']['name']))
-		{
-			static::$daemon_name = static::$args['daemon']['name'];
-		}
-		elseif( ! empty(static::$appl))
-		{
-			static::$daemon_name = static::$appl->getName();
-		}
-		else
-		{
-			static::$daemon_name = basename($_SERVER['argv'][0]);
-		}
-		static::$daemon_name = strtolower(static::$daemon_name);
-    }
 
     /**
      * запускаем, останавливаем или перезапускаем демон в зависимости от $runmode
@@ -156,9 +135,6 @@ class Daemon
      */
     public static function start()
     {
-		//задаем имя демону
-		static::setName();
-
 		//открываем лог файл
 		Logger::init();
 
@@ -170,15 +146,12 @@ class Daemon
 			static::logError("Can't start daemon without application");
 		}
 
-		static::log('starting '.static::getName().'...', TRUE);
+		static::log('starting '.static::getName().'...', Logger::L_QUIET, TRUE);
 
         if (static::check()) {
             static::logError('[START] phpd with pid-file \'' . static::$pidfile . '\' is running already (PID ' . static::$pid . ')', TRUE);
             exit;
         }
-
-        //инициализируем параметры приложения
-        static::$appl->applyArgs(static::$args['appl']);
 
         //передаем приложению ссылку на мастерский процесс
 		$master = new Thread\Master();
@@ -216,9 +189,6 @@ class Daemon
      */
     public static function stop($mode = 1)
     {
-		//задаем имя демону
-		static::setName();
-
 		//открываем лог файл
 		static::openLogs();
 
@@ -239,7 +209,7 @@ class Daemon
      */
     public static function getPid()
     {
-        static::$pidfile = rtrim(Config::get('Daemon.pid_dir'),'/').'/'.static::getName().'.pid';
+        static::$pidfile = Config::get('Daemon.pid_file');
 
         if (!file_exists(static::$pidfile))   //если pid-файла нет
         {

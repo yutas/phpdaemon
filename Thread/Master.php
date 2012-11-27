@@ -1,16 +1,20 @@
 <?php
 namespace Daemon\Thread;
 
-use \Daemon\Daemon as Daemon;
-use \Daemon\Thread\Thread as Thread;
+use \Daemon\Daemon;
+use \Daemon\Thread\Thread;
 use \Daemon\Thread\Child as Thread_Child;
 use \Daemon\Thread\Collection as Thread_Collection;
+use \Daemon\Utils\Config;
+use \Daemon\Utils\Logger;
 
 /**
  * класс описывает мастерский процесс демона
  */
 class Master extends Thread
 {
+	use \Daemon\Utils\LogTrait;
+
 	const MAIN_COLLECTION_NAME = 'main';
 
     protected $child_collections;            //коллекция дочерних процессов
@@ -25,11 +29,11 @@ class Master extends Thread
      */
     public function start()
     {
-        if( ! Daemon::getConfig('alive'))          //если стоит флаг демонизации
+        if( ! Config::get('Daemon.alive'))          //если стоит флаг демонизации
         {
             $pid = pcntl_fork();                    //форкаем текущий процесс
             if ($pid === - 1) {
-                $this->log('Could not fork master process', Logger::L_ERROR);
+                self::log('Could not fork master process', Logger::L_ERROR);
             }
         }
         else
@@ -50,11 +54,11 @@ class Master extends Thread
                 }
                 if (!pcntl_signal($no, array($this,'sighandler') , TRUE))
                 {
-                    $this->log('Cannot assign ' . $name . ' signal', Logger::L_ERROR);
+                    self::log('Cannot assign ' . $name . ' signal', Logger::L_ERROR);
                 }
             }
 
-			$this->addChildCollection(self::MAIN_COLLECTION_NAME, $this->appl->getConfig('max_child_count'));		//создаем коллекцию для дочерних процессов
+			$this->addChildCollection(self::MAIN_COLLECTION_NAME, Config::get('Application.max_child_count'));		//создаем коллекцию для дочерних процессов
             $this->run();																						//собсна, активные действия процесса
             $this->shutdown();																					//завершаем процесс
         }
@@ -68,7 +72,7 @@ class Master extends Thread
      */
     public function run()
     {
-        $this->log('starting master (PID ' . posix_getpid() . ')....');
+        self::log('starting master (PID ' . posix_getpid() . ')....');
 
         //задаем приоритет процесса в ОС
         proc_nice($this->priority);
@@ -95,7 +99,7 @@ class Master extends Thread
             }
 
             //ожидаем заданное время для получения сигнала операционной системы
-            $this->sigwait(Daemon::getConfig('sigwait'));
+            $this->sigwait(Config::get('Daemon.sigwait'));
 
             //если сигнал был получен, вызываем связанную с ним функцию
             pcntl_signal_dispatch();
@@ -123,10 +127,10 @@ class Master extends Thread
         if($this->canSpawnChild($collection_name))     //если еще есть свободные места для дочерних процессов
         {
             //переоткрываем логи (вдруг файл лога удалили)
-            Daemon::openLogs();
+            Logger::openLogs();
             //увеличиваем счетчик
             ++$this->child_count;
-            $this->log('Spawning a child', Logger::L_DEBUG);
+            self::log('Spawning a child', Logger::L_DEBUG);
             $thread = new Thread_Child;
 
             //инициализируем функции
@@ -186,8 +190,8 @@ class Master extends Thread
 			$collection->stop($kill);
 			if( ! $kill) {
 				//ждем, пока не остановятся все дочерние процессы
-				$this->log('Waiting for all children of "'.$name.'" collection to shutdown...', Logger::L_INFO);
-				$this->log('"'.$name.'" collection: '.$collection->getNumber().' of child threads remaining...', Logger::L_INFO);
+				self::log('Waiting for all children of "'.$name.'" collection to shutdown...', Logger::L_INFO);
+				self::log('"'.$name.'" collection: '.$collection->getNumber().' of child threads remaining...', Logger::L_INFO);
 				while($collection->getNumber() > 0)
 				{
 					$this->sigwait(Daemon::getConfig('sigwait'));
@@ -196,7 +200,7 @@ class Master extends Thread
 			}
 		}
         file_put_contents($this->pidfile, '');
-        $this->log('Getting shutdown...');
+        self::log('Getting shutdown...');
         exit(0);
     }
 
@@ -262,8 +266,8 @@ class Master extends Thread
 			$collection = $this->child_collections[$name];
 			$collection->stop();
 			//ждем, пока не остановятся все дочерние процессы
-			$this->log('Waiting for all children of "'.$name.'" collection to shutdown...', Logger::L_INFO);
-			$this->log('"'.$name.'" collection: '.$collection->getNumber().' of child threads remaining...', Logger::L_INFO);
+			self::log('Waiting for all children of "'.$name.'" collection to shutdown...', Logger::L_INFO);
+			self::log('"'.$name.'" collection: '.$collection->getNumber().' of child threads remaining...', Logger::L_INFO);
 			while($collection->getNumber() > 0)
 			{
 				$this->sigwait(Daemon::getConfig('sigwait'));

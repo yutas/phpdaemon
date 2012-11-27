@@ -6,13 +6,13 @@ use \Daemon\Config;
 
 class Example extends Application
 {
-	const NAME = 'example';
+	const LOG_NAME = 'example';
 
 	private $counter = 0;
 
 	public function run()
 	{
-		self::log("Master runtime");
+		static::log("Master runtime");
 		if($this->counter < 2)		//пока значение счетчика меньше двух
 		{
 			//создаем дочерний процесс и передаем имена функций, которые будут выполняться в дочернем процессе
@@ -27,7 +27,7 @@ class Example extends Application
 	{
 		$x = 0;
 		while($x < 20){
-			self::log('child '.posix_getpid());
+			static::log('child '.posix_getpid());
 			sleep(1);
 			$x++;
 		}

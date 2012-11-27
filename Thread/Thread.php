@@ -1,10 +1,12 @@
 <?php
 namespace Daemon\Thread;
-
-use \Daemon\Daemon as Daemon;
+use \Daemon\Daemon;
+use \Daemon\Utils\Logger;
 
 abstract class Thread
 {
+	use \Daemon\Utils\LogTrait;
+
     protected $appl;									//выполняемое приложение
     public $pid;
     protected $priority = 4;                            //приоритет процесса в ОС
@@ -248,16 +250,6 @@ abstract class Thread
         return FALSE;
     }
 
-    /**
-     * запись в лог от имени процесса
-     */
-    public function log($_msg,$_verbose = Logger::L_MIN)
-    {
-        if($_verbose <= Daemon::getConfig('verbose'))
-        {
-            Daemon::logWithSender($_msg,$this->thread_name);
-        }
-    }
 }
 
 

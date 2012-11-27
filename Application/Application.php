@@ -5,15 +5,9 @@ use \Daemon\Utils\Config;
 
 abstract class Application implements IApplication
 {
-	const NAME = '';
+	use \Daemon\Utils\LogTrait;
 
-    private $config = array(
-        'max_child_count' => 10,
-    );
-
-	private $config_desc = array(
-        'max_child_count' => " - maximum amount of threads",
-	);
+	const LOG_NAME = 'Application';
 
     private $master_thread = false;
 	protected $api_support = false;
@@ -21,12 +15,6 @@ abstract class Application implements IApplication
 
 	//TODO: при хранении конфигов в файлах убрать дурацкий параметр $only_help
     public function  __clone(){}
-
-    //инициализируем параметры, переданные через командную строку и через Daemon::init()
-    public function applyArgs($_conf)
-    {
-		//Config::add(get_called_class(), $_conf);
-    }
 
     //функция, которая выполняется перед главным циклом
     public function runBefore(){}
@@ -65,61 +53,6 @@ abstract class Application implements IApplication
         return $this->getMaster()->spawnChild($_before_function, $_runtime_function, $_after_function, $collection_name);
     }
 
-    /**
-     * запись в лог от имени приложения
-     */
-    protected function log($_msg,$_verbose = Logger::L_MIN, $_to_stderr = false)
-    {
-        if($_verbose <= Daemon::getConfig('verbose'))
-        {
-            Daemon::logWithSender($_msg, static::NAME, $_to_stderr);
-        }
-    }
-
-	protected function logError($_msg, $_to_stderr = false)
-	{
-		$this->log("[ERROR] ".$_msg, Logger::L_ERROR, $_to_stderr);
-	}
-
-	public function getConfig($param = null, $default = null)
-	{
-		$app_class = get_called_class();
-		$config = Config::get($app_class);
-		$config = $config[Config::PARAMS_KEY];
-		if( ! empty($param)) {
-			if(isset($config[$param])) {
-				return $config[$param];
-			} elseif(null !== $default) {
-				return $default;
-			} else {
-				$this->logError("Undefined config parameter \"".$param."\"");
-			}
-		}
-		return $config;
-	}
-
-	public function getConfigDesc($param = null)
-	{
-		$app_class = get_called_class();
-		$config_desc = Config::get($app_class);
-		$config_desc = $config_desc[Config::PARAMS_KEY];
-		if( ! empty($param)) {
-			if(isset($config_desc[$param])) {
-				return $config_desc[$param];
-			} else {
-				$this->logError("Undefined config parameter \"".$param."\"");
-			}
-		}
-		return $config_desc;
-	}
-
-	public static function getHelp()
-	{
-		$app = get_called_class();
-		$object = new $app(true);
-		return Config::getHelpMessage($app);
-	}
-
     protected function shutdown()
     {
         posix_kill(posix_getpid(),SIGTERM);
@@ -141,11 +74,6 @@ abstract class Application implements IApplication
 
 	public function sendToApi()
 	{
-	}
-
-	public function getName()
-	{
-		return static::NAME;
 	}
 
 }

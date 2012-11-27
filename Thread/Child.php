@@ -1,6 +1,7 @@
 <?php
 namespace Daemon\Thread;
 use \Daemon\Daemon as Daemon;
+use \Daemon\Utils\Logger;
 
 class Child extends Thread
 {
@@ -17,7 +18,7 @@ class Child extends Thread
      */
     public function run()
     {
-        $this->log('starting child (PID ' . posix_getpid() . ')....', Logger::L_TRACE);
+        static::log('starting child (PID ' . posix_getpid() . ')....', Logger::L_TRACE);
         proc_nice($this->priority);
         gc_enable();
 
@@ -100,8 +101,8 @@ class Child extends Thread
      */
     public function shutdown()
     {
-        $this->log(getmypid() . ' is getting shutdown', Logger::L_DEBUG);
-        $this->log('Parent PID - '.posix_getppid(), Logger::L_TRACE);
+        static::log(getmypid() . ' is getting shutdown', Logger::L_DEBUG);
+        static::log('Parent PID - '.posix_getppid(), Logger::L_TRACE);
         exit(0);
     }
 
