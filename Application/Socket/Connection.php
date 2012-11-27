@@ -8,6 +8,7 @@ use \Daemon\Utils\Helper;
 class Connection
 {
 	//const DELIMITER = "\n\n============\n\n";
+	//TODO разделитель переводить в символы при передаче в сокет
 	const DELIMITER = "\u00C0\u00C1\u00C2\u00C3\u00C4\u00C5\u00C6\u00C7";
 	const READ_LENGTH = 102400;
 	const RESOURCE_TYPE = 'Socket';

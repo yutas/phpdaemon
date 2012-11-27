@@ -13,7 +13,6 @@ class Server extends Socket
 	use \Daemon\Utils\LogTrait;
 	const LOG_NAME = 'Socket_Server';
 
-	//TODO: номера не должны кончаться, возможно нужно использовать текущее время или md5(microtime())
 	protected $resource;
 	protected $connections = array();
 

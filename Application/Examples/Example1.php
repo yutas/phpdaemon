@@ -23,7 +23,7 @@ class Example1 extends Application
 		'file' => 'tmp/intercom.sock',
 	);
 	private $api_config = array(
-		'type' => Socket::TYPE_UNIX,
+		'type' => Socket::TYPE_INET,
 		'ip' => '127.0.0.1',
 		'port' => 30001,
 		'file' => 'tmp/api.sock',
@@ -36,8 +36,8 @@ class Example1 extends Application
 		$this->intercom = new Intercom\Server($this->intercom_config);
 		$this->intercom->init();
 
-		//$this->api = new Api\Server($this->api_config);
-		//$this->api->init();
+		$this->api = new Api\Server($this->api_config);
+		$this->api->init();
 	}
 
 	public function run()
@@ -54,7 +54,7 @@ class Example1 extends Application
 				$this->intercom->send($response, $envelope->getSender());
 			}
 		}
-		if($this->counter < 2)		//пока значение счетчика меньше двух
+		if($this->counter < 1)		//пока значение счетчика меньше двух
 		{
 			//создаем дочерний процесс и передаем имена функций, которые будут выполняться в дочернем процессе
 			$child_pid = $this->spawnChild('child_before_action', 'child_main_action', FALSE, 'onShutdown');
@@ -72,6 +72,14 @@ class Example1 extends Application
 			{
 				$message = $envelope->getMessage();
 				static::log(sprintf("Got message \"%s\"", $message->text));
+			}
+		}
+		if($e = $this->client->listen())
+		{
+			foreach($e as $envelope)
+			{
+				$message = $envelope->getMessage();
+				static::log(sprintf("Got API message \"%s\"", $message->text));
 			}
 		}
 		$message = new IntercomMessage\Message();
@@ -92,6 +100,7 @@ class Example1 extends Application
 	{
 		if($this->intercom instanceof Intercom\Server) $this->intercom->shutdown();
 		if($this->client instanceof Intercom\Client) $this->client->shutdown();
+		if($this->api instanceof Api\Server) $this->api->shutdown();
 	}
 
 }
