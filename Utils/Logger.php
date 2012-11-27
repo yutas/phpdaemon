@@ -1,43 +1,30 @@
 <?php
 
 namespace Daemon\Utils;
+use \Daemon\Daemon;
 
 class Logger
 {
 	//verbose levels
-	const L_TRACE = 4;
-	const L_DEBUG = 3;
-	const L_INFO = 2;
-	const L_ERROR = 1;
-	const L_MIN = 0;
+	const L_TRACE	= 4;
+	const L_DEBUG	= 3;
+	const L_INFO	= 2;
+	const L_ERROR	= 1;
+	const L_QUIET	= 0;
 
-	protected static $filename;
-    protected static $pointer;                       //указатель на файл логов
-    protected static $to_stderr;                   //выводить ли логи в STDERR
-
+	protected static $filename;		//имя файла логов
+    protected static $resource;		//указатель на файл логов
+	protected static $class_name_cache = array()
+;
 
 	public static function init()
 	{
 		self::openLogs();
-		self::$to_stderr = Config::get('Logger.to_stderr');
-	}
-
-    /**
-     * добавляем запись в лог от имени демона
-     */
-	//TODO может быть использовать трейты для того, чтобы подмешать функцию log в нужный класс
-    public static function log($_msg,$_verbose = self::L_MIN, $_config_verbose = self::L_MIN, $_to_stderr = FALSE)
-    {
-        if($_verbose <= $_config_verbose)        //если уровень подробности записи не выше ограничения в настройках
-        {
-            self::logWithSender($_msg,'DAEMON',$_to_stderr);
-        }
-    }
-
-	public static function logError($_msg, $_to_stderr = FALSE)
-	{
-		$_msg = '[ERROR] '.$_msg;
-		self::log($_msg, self::L_ERROR, $_to_stderr);
+		if(is_string(Config::get('Logger.verbose')))
+		{
+			$constant = __NAMESPACE__.'\\'.Config::get('Logger.verbose');
+			Config::set('Logger.verbose', defined($constant) ? constant($constant) : intval(Config::get('Logger.verbose')));
+		}
 	}
 
     /**
@@ -46,12 +33,12 @@ class Logger
     public static function logWithSender($_msg,$_sender = 'nobody',$_to_stderr = FALSE)
     {
         $mt = explode(' ', microtime());
-        if ( ($_to_stderr || self::$to_stderr) && defined('STDERR'))   //если в настройках определен вывод в STDERR
+        if ( ($_to_stderr || Config::get('Logger.to_stderr')) && defined('STDERR'))   //если в настройках определен вывод в STDERR
         {
             //выводим логи еще и в управляющий терминал
             fwrite(STDERR, '['.strtoupper($_sender).'] ' . $_msg . PHP_EOL);
         }
-        if (self::$resource)                          //если файл логов был открыт без ошибок
+        if (is_resource(self::$resource))                          //если файл логов был открыт без ошибок
         {
             fwrite(self::$resource, '[' . date('D, j M Y H:i:s', $mt[1]) . '.' . sprintf('%06d', $mt[0] * 1000000) . ' ' . date('O') . '] ['.strtoupper($_sender).'] ' . $_msg . PHP_EOL);
         }
@@ -80,4 +67,23 @@ class Logger
         self::$filename = Config::get('Logger.dir').'/'.Daemon::getName().'.log';
 		self::$resource = fopen(self::$filename, 'a+');
     }
+
+
+	public static function getLogClassName($class)
+	{
+		$md5 = md5($class);
+		if(empty(self::$class_name_cache[$md5]))
+		{
+			if(defined($class.'::LOG_NAME'))
+			{
+				self::$class_name_cache[$md5] = constant($class.'::LOG_NAME');
+			}
+			else
+			{
+				$a = explode('\\', $class);
+				self::$class_name_cache[$md5] = strtoupper(end($a));
+			}
+		}
+		return self::$class_name_cache[$md5];
+	}
 }

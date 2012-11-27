@@ -1,7 +1,7 @@
 <?php
 namespace Daemon\Application;
-
-use \Daemon\Daemon as Daemon;
+use \Daemon\Daemon;
+use \Daemon\Utils\Config;
 
 abstract class Application implements IApplication
 {
@@ -25,7 +25,7 @@ abstract class Application implements IApplication
     //инициализируем параметры, переданные через командную строку и через Daemon::init()
     public function applyArgs($_conf)
     {
-		Config::add(get_called_class(), $_conf);
+		//Config::add(get_called_class(), $_conf);
     }
 
     //функция, которая выполняется перед главным циклом

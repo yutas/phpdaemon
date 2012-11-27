@@ -2,17 +2,16 @@
 ---
 Daemon:
   alive: false              #запустить в терминале (не демонизировать)
-  verbose: Logger::L_ERROR  #степерь подробности логирования
   sigwait: 10               #задержка выполнения runtime для ожидания управляющих сигналов операционной системы (миллисекунды)
   pid_dir: /tmp             #папка для хранения pid-файла
 
 Application:
   max_child_count: 10
-  verbose: Logger::L_ERROR  #степерь подробности логирования
 
 Logger:
   dir: /tmp
   to_stderr: false     #выводить сообщения в STDERR
+  verbose: Logger::L_ERROR  #степерь подробности логирования
 
 
 
@@ -36,7 +35,7 @@ Aliases:
     path: Daemon.logs_to_stderr
     help: " \t\t- output logs to STDERR"
   v:
-    path: Daemon.verbose
+    path: Logger.verbose
     help: " \t\t- verbose daemon logs"
   s: 
     path: Daemon.sigwait

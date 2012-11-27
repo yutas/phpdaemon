@@ -9,6 +9,7 @@ class Config
 	const DESC_KEY = 1;
 
 	private static $data = array();
+	private static $cache = array();
 
 	public static function getHelpMessage($class)
 	{
@@ -21,7 +22,21 @@ class Config
 
 	public static function get($path, $default = null)
 	{
-		return Helper::array_get(static::$data, $path, $default);
+		if(empty(self::$cache[$path]))
+		{
+			self::$cache[$path] = Helper::array_get(static::$data, $path, $default);
+		}
+		return self::$cache[$path];
+	}
+
+
+	public static function set($path, $value)
+	{
+		if(Helper::array_set(static::$data, $path, $value))
+		{
+			unset(self::$cache[$path]);
+			return true;
+		}
 	}
 
 

@@ -51,13 +51,13 @@ class Helper
 		}
 	}
 
-	function onRequestStart() {
+	public static function onRequestStart() {
 		$dat = getrusage();
 		define('PHP_TUSAGE', microtime(true));
 		define('PHP_RUSAGE', $dat["ru_utime.tv_sec"]*1e6+$dat["ru_utime.tv_usec"]);
 	}
 
-	function getCpuUsage() {
+	public static function getCpuUsage() {
 		$dat = getrusage();
 		$dat["ru_utime.tv_usec"] = ($dat["ru_utime.tv_sec"]*1e6 + $dat["ru_utime.tv_usec"]) - PHP_RUSAGE;
 		$time = (microtime(true) - PHP_TUSAGE) * 1000000;

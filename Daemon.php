@@ -3,6 +3,7 @@
 namespace Daemon;
 use \Daemon\Utils\Helper;
 use \Daemon\Utils\Logger;
+use \Daemon\Utils\LogTrait;
 use \Daemon\Utils\Config;
 
 /**
@@ -15,9 +16,10 @@ use \Daemon\Utils\Config;
  * Класс отвечает за все операции с демоном
  */
 //TODO: нужна функция дебага, которая будет выводить файл и строку, где была вызвана
-//TODO: возможно логгер нужно реализовать отдельным классом
 class Daemon
 {
+	use LogTrait;
+
 	const DEFAULT_CONFIG_FILE = 'config.yml';
 	//runmodes
 	const RUNMODE_START = 'start';
@@ -69,6 +71,7 @@ class Daemon
 			{
 				static::setApplication($_appl);
 			}
+			static::log("asdfasd", 0, true);
 		} catch(\Exception $e) {
 			echo $e->getMessage().PHP_EOL;
 			exit(1);
@@ -286,15 +289,15 @@ class Daemon
 	{
 		$matches = array();
 		$args = array();
+        $out = array();
         //инициализируем runmode
 		if(preg_match(static::$args_string_pattern,$args_string,$matches)) {
 			static::setRunmode($matches['runmode']);
 			$args = explode(' ',$matches['args_string']);
 		} else {
-			static::$runmode = Daemon::RUNMODE_HELP;
+			$out['h'] = true;
 		}
 
-        $out = array();
         $last_arg = NULL;
 
 		foreach($args as $arg) {
