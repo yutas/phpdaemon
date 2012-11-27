@@ -11,8 +11,8 @@ Application:
   verbose: Logger::L_ERROR  #степерь подробности логирования
 
 Logger:
-  log_dir: /tmp
-  logs_to_stderr: false     #выводить сообщения в STDERR
+  dir: /tmp
+  to_stderr: false     #выводить сообщения в STDERR
 
 
 
