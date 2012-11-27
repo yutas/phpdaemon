@@ -103,7 +103,7 @@ class Child extends Thread
     {
         static::log(getmypid() . ' is getting shutdown', Logger::L_DEBUG);
         static::log('Parent PID - '.posix_getppid(), Logger::L_TRACE);
-        exit(0);
+		parent::shutdown();
     }
 
 }

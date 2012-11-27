@@ -8,14 +8,14 @@ trait LogTrait
 	{
         if($verbose <= Config::get('Logger.verbose'))        //если уровень подробности записи не выше ограничения в настройках
 		{
-			Logger::logWithSender($msg, self::getLogName(), $to_stderr);
+			Logger::logWithSender($msg, static::getLogName(), $to_stderr);
 		}
 	}
 
 	public static function logError($_msg, $_to_stderr = FALSE)
 	{
 		$_msg = '[ERROR] '.$_msg;
-		self::log($_msg, Logger::L_ERROR, $_to_stderr);
+		static::log($_msg, Logger::L_ERROR, $_to_stderr);
 	}
 
 

@@ -26,7 +26,7 @@ class Example extends Application
 	public function child_main_action()
 	{
 		$x = 0;
-		while($x < 20){
+		while($x < 2){
 			static::log('child '.posix_getpid());
 			sleep(1);
 			$x++;
@@ -37,6 +37,11 @@ class Example extends Application
 	public function child_before_action()
 	{
 
+	}
+
+	public function onShutdown()
+	{
+		parent::onShutdown();
 	}
 
 }

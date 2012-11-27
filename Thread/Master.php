@@ -60,6 +60,7 @@ class Master extends Thread
 
 			$this->addChildCollection(self::MAIN_COLLECTION_NAME, Config::get('Application.max_child_count'));		//создаем коллекцию для дочерних процессов
             $this->run();																						//собсна, активные действия процесса
+			$this->onShutdown();
             $this->shutdown();																					//завершаем процесс
         }
         $this->pid = $pid;
@@ -79,13 +80,6 @@ class Master extends Thread
 
         //включаем сборщик циклических зависимостей
         gc_enable();
-
-        //задаем функцию, которая будет вызываться при завершении процесса
-		//TODO: это убрать, реализовать через вызов функций при получении сигнала
-        register_shutdown_function(array(
-            $this,
-            'onShutdown'
-        ));
 
         //выполняем функцию приложения до рабочего цикла
         $this->appl->runBefore();
@@ -166,16 +160,6 @@ class Master extends Thread
     public function onShutdown()
     {
 		$this->appl->onShutdown();
-
-        if ($this->pid != posix_getpid())
-        {
-            return;
-        }
-        if ($this->shutdown === TRUE)
-        {
-            return;
-        }
-        $this->shutdown(SIGTERM);
     }
 
 
@@ -201,7 +185,7 @@ class Master extends Thread
 		}
         file_put_contents($this->pidfile, '');
         self::log('Getting shutdown...');
-        exit(0);
+		parent::shutdown();
     }
 
 

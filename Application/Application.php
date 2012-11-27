@@ -13,7 +13,6 @@ abstract class Application implements IApplication
 	protected $api_support = false;
 
 
-	//TODO: при хранении конфигов в файлах убрать дурацкий параметр $only_help
     public function  __clone(){}
 
     //функция, которая выполняется перед главным циклом
@@ -64,8 +63,9 @@ abstract class Application implements IApplication
 	 * @access public
 	 * @return void
 	 */
-	//TODO: проверить все подобные функции
-	public function onShutdown() {}
+	public function onShutdown()
+	{
+	}
 
 	public function hasApiSupport()
 	{
