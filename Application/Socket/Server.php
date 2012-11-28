@@ -16,10 +16,9 @@ class Server extends Socket
 	protected $resource;
 	protected $connections = array();
 
-	//TODO: выставлять правильные права доступа на файл сокета
 	public function init()
 	{
-		if( ! ($this->resource = socket_create($this->getType(), SOCK_STREAM, 0)))
+		if( ! ($this->resource = socket_create($this->getType(true), SOCK_STREAM, 0)))
 		{
 			$this->throwError("Failed to create server");
 		}
@@ -32,6 +31,14 @@ class Server extends Socket
 		if( ! socket_listen($this->resource))
 		{
 			$this->throwError("Failed to set up socket listener");
+		}
+
+		if(Socket::TYPE_UNIX === $this->getType())
+		{
+			if( ! chmod($this->getAddress(), 0777))
+			{
+				$this->throwError("Failed to change socket file mode");
+			}
 		}
 		socket_set_nonblock($this->resource);
 	}

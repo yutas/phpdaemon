@@ -12,7 +12,7 @@ class Client extends Socket
 
 	public function init()
 	{
-		if( ! ($this->resource = socket_create($this->getType(), SOCK_STREAM, 0)))
+		if( ! ($this->resource = socket_create($this->getType(true), SOCK_STREAM, 0)))
 		{
 			$this->throwError("Failed to create client socket");
 		}

@@ -52,7 +52,7 @@ abstract class Socket
 
 	protected function getType($raw = false)
 	{
-		return $raw ? $this->type : ($this->type == self::TYPE_UNIX ? AF_UNIX : AF_INET);
+		return $raw ? ($this->type == self::TYPE_UNIX ? AF_UNIX : AF_INET) : $this->type;
 	}
 
 	protected function throwError($prefix = '')
