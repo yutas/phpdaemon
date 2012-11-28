@@ -3,7 +3,7 @@ namespace Daemon\Application\Examples;
 
 use \Daemon\Application\Application;
 use \Daemon\Application\Config;
-use \Daemon\Application\Socket\Socket;
+use \Daemon\Application\Socket;
 use \Daemon\Application\Intercom;
 use \Daemon\Application\Intercom\Message as IntercomMessage;
 use \Daemon\Application\Api;
@@ -18,13 +18,13 @@ class Example1 extends Application
 	private $counter = 0;
 	private $intercom;
 	private $intercom_config = array(
-		'type' => Socket::TYPE_UNIX,
+		'type' => Socket\Socket::TYPE_UNIX,
 		'ip' => '127.0.0.1',
 		'port' => 30000,
 		'file' => 'tmp/intercom.sock',
 	);
 	private $api_config = array(
-		'type' => Socket::TYPE_INET,
+		'type' => Socket\Socket::TYPE_INET,
 		'ip' => '127.0.0.1',
 		'port' => 30001,
 		'file' => 'tmp/api.sock',
@@ -48,11 +48,22 @@ class Example1 extends Application
 		{
 			foreach($e as $envelope)
 			{
-				$message = $envelope->getMessage();
+				//echo $envelope."\n";
+				/*$message = $envelope->getMessage();
 				static::log(sprintf("Got message \"%s\"", $message->text), Logger::L_DEBUG);
 				$response = new IntercomMessage\Message();
 				$response->text = "Ответ мастера треду ".$envelope->getSender();
-				$this->intercom->send($response, $envelope->getSender());
+				$this->intercom->send($response, $envelope->getSender());*/
+			}
+		}
+		if($e = $this->api->listen())
+		{
+			foreach($e as $envelope)
+			{
+				$message = $envelope->getMessage();
+				static::log(sprintf("Got API message \"%s\"", $message->text));
+				$response = new Socket\Envelope(new Api\Command());
+				$this->api->response();
 			}
 		}
 		if($this->counter < 1)		//пока значение счетчика меньше двух
@@ -75,17 +86,9 @@ class Example1 extends Application
 				static::log(sprintf("Got message \"%s\"", $message->text), Logger::L_DEBUG);
 			}
 		}
-		if($e = $this->client->listen())
-		{
-			foreach($e as $envelope)
-			{
-				$message = $envelope->getMessage();
-				static::log(sprintf("Got API message \"%s\"", $message->text));
-			}
-		}
 		$message = new IntercomMessage\Message();
 		$message->text = 'Тестовое сообщение от треда '.posix_getpid().' мастеру';
-		$this->client->send($message);
+		//$this->client->send($message);
 		sleep(1);
 		return false;
 	}

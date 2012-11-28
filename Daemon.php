@@ -38,11 +38,10 @@ class Daemon
 	protected static $args_string_pattern = "#^\b(?<runmode>start|stop|restart|check)\b\s*(?<args_string>.*)?$#";
 
 	protected static $allowed_runmodes = array(
-		Daemon::RUNMODE_HELP,
-		Daemon::RUNMODE_START,
-		Daemon::RUNMODE_STOP,
-		Daemon::RUNMODE_RESTART,
-		Daemon::RUNMODE_CHECK,
+		self::RUNMODE_START,
+		self::RUNMODE_STOP,
+		self::RUNMODE_RESTART,
+		self::RUNMODE_CHECK,
 	);
 
     /**
@@ -50,6 +49,7 @@ class Daemon
      */
     protected static function init(Application\IApplication $appl = null)
     {
+		//TODO продумать логику исключений и их отлова
 		try {
 			//разберем аргументы, переданные через командную строку
 			static::$args = static::parseArgsString(implode(' ', array_slice($_SERVER['argv'],1)));
@@ -62,7 +62,7 @@ class Daemon
 			//show help
 			if(Config::get('Flags.help'))
 			{
-				static::$runmode = static::RUNMODE_HELP;
+				static::setRunmode(self::RUNMODE_HELP);
 			}
 
 			//открываем лог файл
@@ -101,19 +101,19 @@ class Daemon
 		{
 			switch (static::$runmode)
 			{
-				case Daemon::RUNMODE_HELP:
+				case self::RUNMODE_HELP:
 					$result = static::showHelp();
 					break;
-				case Daemon::RUNMODE_START:
+				case self::RUNMODE_START:
 					$result = static::start();
 					break;
-				case Daemon::RUNMODE_STOP:
+				case self::RUNMODE_STOP:
 					$result = static::stop();
 					break;
-				case Daemon::RUNMODE_RESTART:
+				case self::RUNMODE_RESTART:
 					$result = static::restart();
 					break;
-				case Daemon::RUNMODE_CHECK:
+				case self::RUNMODE_CHECK:
 					$result = static::check();
 					break;
 			}
@@ -301,7 +301,7 @@ class Daemon
 	{
 		$help_message .= "Usage: ./%s   {%s}   <args>".PHP_EOL.PHP_EOL;
 		$help_message .= Config::getHelp();
-		printf($help_message, basename($_SERVER['argv'][0], implode('|', static::$allowed_runmodes)));
+		printf($help_message, basename($_SERVER['argv'][0]), implode('|', static::$allowed_runmodes));
 		echo PHP_EOL;
 		return 0;
 	}
@@ -313,13 +313,13 @@ class Daemon
 
 	protected static function setRunmode($runmode)
 	{
-		if( ! empty($runmode) && in_array($runmode, static::$allowed_runmodes))
+		if( ! empty($runmode) && in_array($runmode, static::$allowed_runmodes) || (self::RUNMODE_HELP === $runmode))
 		{
 			static::$runmode = $runmode;
 		}
 		else
 		{
-			static::$runmode = Daemon::RUNMODE_HELP;
+			static::$runmode = self::RUNMODE_HELP;
 		}
 	}
 }

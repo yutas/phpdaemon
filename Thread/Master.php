@@ -260,10 +260,17 @@ class Master extends Thread
 
 	public function addChildCollection($name = self::MAIN_COLLECTION_NAME, $limit = 0)
 	{
-		if( ! empty($name) && empty($this->child_collections[$name])) {
-			$this->child_collections[$name] = new Thread_Collection($limit);
-			return true;
+		if(empty($name))
+		{
+			throw new \Exception("Collection name must be set");
 		}
+		if(! empty($this->child_collections[$name]))
+	   	{
+			throw new \Exception("Collection with name {$name} already exists");
+		}
+
+		$this->child_collections[$name] = new Thread_Collection($limit);
+		return true;
 	}
 
 	public function deleteChildCollection($name = self::MAIN_COLLECTION_NAME)

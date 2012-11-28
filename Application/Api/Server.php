@@ -3,12 +3,12 @@
 namespace Daemon\Application\Api;
 use \Daemon\Utils\Helper as Helper;
 use \Daemon\Daemon as Daemon;
-use \Daemon\Application\Socket\Server as SocketServer;
+use \Daemon\Application\Socket;
 
 /**
  * Класс реализует работу апи через сокеты
  */
-class Server extends SocketServer
+class Server extends Socket\Server
 {
 	/**
 	 * response - sends response to received message from client
@@ -17,9 +17,9 @@ class Server extends SocketServer
 	 * @access public
 	 * @return void
 	 */
-	public function response(Command $message)
+	public function response(Socket\Envelope $envelope)
 	{
-		$this->write($message);
-		$this->deleteConnection($message->getConnectionId());
+		$this->write($envelope);
+		$this->deleteConnection($envelope->getConnectionId());
 	}
 }

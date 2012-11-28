@@ -22,12 +22,6 @@ class Client extends SocketClient
 		$this->last_activity_time = time();
 	}
 
-	/**
-	 * listen - server listens to accepted clients, client listens to server
-	 *
-	 * @access public
-	 * @return void
-	 */
 	public function getResponse()
 	{
 		do {
@@ -43,6 +37,7 @@ class Client extends SocketClient
 		return $message->getMessage();
 	}
 
+	//TODO API
 	public function send(Command $message)
 	{
 		$this->connection->write($message);
