@@ -32,7 +32,7 @@ class Master extends Thread
         {
             $pid = pcntl_fork();                    //форкаем текущий процесс
             if ($pid === - 1) {
-                self::log('Could not fork master process', Logger::L_ERROR);
+                static::log('Could not fork master process', Logger::L_ERROR);
             }
         }
         else
@@ -53,7 +53,7 @@ class Master extends Thread
                 }
                 if (!pcntl_signal($no, array($this,'sighandler') , TRUE))
                 {
-                    self::log('Cannot assign ' . $name . ' signal', Logger::L_ERROR);
+                    static::log('Cannot assign ' . $name . ' signal', Logger::L_ERROR);
                 }
             }
 
@@ -71,34 +71,38 @@ class Master extends Thread
      */
     public function run()
     {
-        self::log('starting master (PID ' . posix_getpid() . ')....');
+		try {
+			static::log('starting master (PID ' . posix_getpid() . ')....');
 
-        //задаем приоритет процесса в ОС
-        proc_nice($this->priority);
+			//задаем приоритет процесса в ОС
+			proc_nice($this->priority);
 
-        //включаем сборщик циклических зависимостей
-        gc_enable();
+			//включаем сборщик циклических зависимостей
+			gc_enable();
 
-        //выполняем функцию приложения до рабочего цикла
-        $this->appl->runBefore();
+			//выполняем функцию приложения до рабочего цикла
+			$this->appl->runBefore();
 
-        //самый главный цикл
-        while (TRUE) {
-            if(TRUE === $this->appl->run())      //если функция вернула TRUE
-            {
-                //прекращаем цикл
-                break;
-            }
+			//самый главный цикл
+			while (TRUE) {
+				if(TRUE === $this->appl->run())      //если функция вернула TRUE
+				{
+					//прекращаем цикл
+					break;
+				}
 
-            //ожидаем заданное время для получения сигнала операционной системы
-            $this->sigwait(Config::get('Daemon.sigwait'));
+				//ожидаем заданное время для получения сигнала операционной системы
+				$this->sigwait(Config::get('Daemon.sigwait'));
 
-            //если сигнал был получен, вызываем связанную с ним функцию
-            pcntl_signal_dispatch();
-        }
+				//если сигнал был получен, вызываем связанную с ним функцию
+				pcntl_signal_dispatch();
+			}
 
-        //выполняем функцию приложения после рабочего цикла
-        $this->appl->runAfter();
+			//выполняем функцию приложения после рабочего цикла
+			$this->appl->runAfter();
+		} catch(\Exception $e) {
+			static::log($e->getMessage());
+		}
     }
 
 
@@ -120,9 +124,10 @@ class Master extends Thread
         {
             //переоткрываем логи (вдруг файл лога удалили)
             Logger::openLogs();
+
             //увеличиваем счетчик
             ++$this->child_count;
-            self::log('Spawning a child', Logger::L_DEBUG);
+            static::log('Spawning a child', Logger::L_DEBUG);
             $thread = new Thread_Child;
 
             //инициализируем функции
@@ -173,8 +178,8 @@ class Master extends Thread
 			$collection->stop($kill);
 			if( ! $kill) {
 				//ждем, пока не остановятся все дочерние процессы
-				self::log('Waiting for all children of "'.$name.'" collection to shutdown...', Logger::L_INFO);
-				self::log('"'.$name.'" collection: '.$collection->getNumber().' of child threads remaining...', Logger::L_INFO);
+				static::log('Waiting for all children of "'.$name.'" collection to shutdown...', Logger::L_INFO);
+				static::log('"'.$name.'" collection: '.$collection->getNumber().' of child threads remaining...', Logger::L_INFO);
 				while($collection->getNumber() > 0)
 				{
 					$this->sigwait(Config::get('Daemon.sigwait'));
@@ -183,7 +188,7 @@ class Master extends Thread
 			}
 		}
         file_put_contents($this->pidfile, '');
-        self::log('Getting shutdown...');
+        static::log('Getting shutdown...');
 		$this->onShutdown();
 		parent::shutdown();
     }
@@ -236,6 +241,23 @@ class Master extends Thread
     }
 
 
+	/**
+	 * sighup - при получении сигнала SIGUP обновляем конфигурацию системы из файла, переданного при запуске,
+	 *			и ретранслируем этот же сигнал всем дочерним процессам
+	 *
+	 * @access public
+	 * @return void
+	 */
+	public function sighup()
+	{
+		parent::sighup();
+		foreach($this->child_collections as $collection)
+		{
+			$collection->signal(SIGHUP);
+		}
+
+	}
+
 	public function addChildCollection($name = self::MAIN_COLLECTION_NAME, $limit = 0)
 	{
 		if( ! empty($name) && empty($this->child_collections[$name])) {
@@ -250,8 +272,8 @@ class Master extends Thread
 			$collection = $this->child_collections[$name];
 			$collection->stop();
 			//ждем, пока не остановятся все дочерние процессы
-			self::log('Waiting for all children of "'.$name.'" collection to shutdown...', Logger::L_INFO);
-			self::log('"'.$name.'" collection: '.$collection->getNumber().' of child threads remaining...', Logger::L_INFO);
+			static::log('Waiting for all children of "'.$name.'" collection to shutdown...', Logger::L_INFO);
+			static::log('"'.$name.'" collection: '.$collection->getNumber().' of child threads remaining...', Logger::L_INFO);
 			while($collection->getNumber() > 0)
 			{
 				$this->sigwait(Config::get('Daemon.sigwait'));

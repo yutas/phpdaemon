@@ -7,6 +7,7 @@ use \Daemon\Application\Socket\Socket;
 use \Daemon\Application\Intercom;
 use \Daemon\Application\Intercom\Message as IntercomMessage;
 use \Daemon\Application\Api;
+use \Daemon\Utils\Logger;
 
 class Example1 extends Application
 {
@@ -48,7 +49,7 @@ class Example1 extends Application
 			foreach($e as $envelope)
 			{
 				$message = $envelope->getMessage();
-				static::log(sprintf("Got message \"%s\"", $message->text));
+				static::log(sprintf("Got message \"%s\"", $message->text), Logger::L_DEBUG);
 				$response = new IntercomMessage\Message();
 				$response->text = "Ответ мастера треду ".$envelope->getSender();
 				$this->intercom->send($response, $envelope->getSender());
@@ -71,7 +72,7 @@ class Example1 extends Application
 			foreach($e as $envelope)
 			{
 				$message = $envelope->getMessage();
-				static::log(sprintf("Got message \"%s\"", $message->text));
+				static::log(sprintf("Got message \"%s\"", $message->text), Logger::L_DEBUG);
 			}
 		}
 		if($e = $this->client->listen())

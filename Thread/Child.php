@@ -123,5 +123,4 @@ class Child extends Thread
     {
 		call_user_func($this->onshutdown_function);
     }
-
 }

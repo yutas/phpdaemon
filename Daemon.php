@@ -54,7 +54,7 @@ class Daemon
 			//разберем аргументы, переданные через командную строку
 			static::$args = static::parseArgsString(implode(' ', array_slice($_SERVER['argv'],1)));
 			//загрузим конфиг из файла
-			Config::load(empty(static::$args['c']) ? getcwd().'/'.self::DEFAULT_CONFIG_FILE : static::$args['c']);
+			Config::load(static::$args['c']);
 
 			//объединяем параметры, переданные через командную строку и из файла конфигурации
 			Config::mergeArgs(static::$args);
@@ -254,7 +254,7 @@ class Daemon
 			static::setRunmode(self::RUNMODE_HELP);
 		}
 
-        $last_arg = NULL;
+		$last_arg = NULL;
 
 		foreach($args as $arg) {
             if (preg_match('~^--(.+)~', $arg, $match)) {
@@ -286,7 +286,13 @@ class Daemon
                 $out[$last_arg] = $arg;
 				$last_arg = NULL;
             }
-        }
+		}
+
+		if(empty($out['c']))
+		{
+			$out['c'] = getcwd().'/'.self::DEFAULT_CONFIG_FILE;
+		}
+
         return $out;
 	}
 

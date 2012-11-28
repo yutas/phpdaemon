@@ -2,6 +2,7 @@
 namespace Daemon\Thread;
 use \Daemon\Daemon;
 use \Daemon\Utils\Logger;
+use \Daemon\Utils\Config;
 
 abstract class Thread
 {
@@ -44,7 +45,6 @@ abstract class Thread
         31
     );
     public static $signals = array(
-		//TODO: обновление конфига "на лету" при получении этого сигнала
         SIGHUP => 'SIGHUP',
         SIGINT => 'SIGINT',
         SIGQUIT => 'SIGQUIT',
@@ -214,6 +214,15 @@ abstract class Thread
         return TRUE;
     }
 
+	public function sighup()
+	{
+		static::log("Got signal to update config");
+		if(Config::update())
+		{
+			Logger::init();
+		}
+	}
+
     /* @method setproctitle
     @description Sets a title of the current process.
     @param string Title.
@@ -253,6 +262,11 @@ abstract class Thread
 
 	public function onShutdown()
 	{
+	}
+
+	public function signal($sig)
+	{
+		return posix_kill($this->pid, $sig);
 	}
 
 }

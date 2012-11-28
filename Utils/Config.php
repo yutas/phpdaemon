@@ -44,12 +44,13 @@ class Config
 	{
 		if ( ! ($yaml = file_get_contents($config_file)))
 		{
-			throw new \Exception("Failed to read config file");
+			throw new \Exception("Failed to read config file {$config_file}");
 		}
 		if ( ! (static::$data = yaml_parse($yaml)))
 		{
-			throw new \Exception("Failed to parse config file");
+			throw new \Exception("Failed to parse config file {$config_file}");
 		}
+		self::$cache = array();
 
 		return true;
 	}
@@ -77,5 +78,23 @@ class Config
 			$help .= "\t{$alias}{$data['help']}".PHP_EOL;
 		}
 		return $help;
+	}
+
+
+	/**
+	 * update - обновляет конфигурацию системы
+	 *
+	 * @param mixed $config_file
+	 * @static
+	 * @access public
+	 * @return void
+	 */
+	public static function update($config_file = false)
+	{
+		$config_file = $config_file ? : Config::get('Flags.config');
+		if(self::load($config_file))
+		{
+			return Config::set('Flags.config', $config_file);
+		}
 	}
 }
