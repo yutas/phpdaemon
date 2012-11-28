@@ -14,7 +14,10 @@ Logger:
   to_stderr: false     #выводить сообщения в STDERR
   verbose: Logger::L_ERROR  #степерь подробности логирования
 
-
+Flags:
+  help: false
+  config: false
+  force: false
 
 
 
@@ -24,11 +27,14 @@ Logger:
 # многобуквенные параметры - с двумя дефисами со значением через знак равно: --param=10 (опущенное значение считается TRUE по-умолчанию)
 Aliases:
   h:
-    path:
+    path: Flags.help
     help: " \t\t- print this message and exit"
   c:
-    path:
+    path: Flags.config
     help: " <path> \t- path to config file"
+  f:
+    path: Flags.force
+    help: " \t\t- force to stop"
   a: 
     path: Daemon.alive
     help: " \t\t- Keep daemon alive (don't daemonize)"

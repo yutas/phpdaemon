@@ -102,7 +102,6 @@ abstract class Thread
             }
             $this->run();
 
-			$this->onShutdown();
             $this->shutdown();
         }
         $this->pid = $pid;
@@ -160,7 +159,6 @@ abstract class Thread
     */
     public function sigterm()
     {
-		$this->onShutdown();
         $this->shutdown();
     }
     /* @method sigint
@@ -169,7 +167,6 @@ abstract class Thread
     */
     public function sigint()
     {
-		$this->onShutdown();
         $this->shutdown(TRUE);
     }
     /* @method sigquit
@@ -178,7 +175,6 @@ abstract class Thread
     */
     public function sigquit()
     {
-		$this->onShutdown();
         $this->shutdown();
     }
     /* @method sigkill
@@ -187,7 +183,6 @@ abstract class Thread
     */
     public function sigkill()
     {
-		$this->onShutdown();
         //убиваем все дочерние процессы
         $this->shutdown(TRUE);
     }

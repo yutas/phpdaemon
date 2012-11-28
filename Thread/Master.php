@@ -59,7 +59,6 @@ class Master extends Thread
 
 			$this->addChildCollection(self::MAIN_COLLECTION_NAME, Config::get('Application.max_child_count'));		//создаем коллекцию для дочерних процессов
             $this->run();																						//собсна, активные действия процесса
-			$this->onShutdown();
             $this->shutdown();																					//завершаем процесс
         }
         $this->pid = $pid;
@@ -178,13 +177,14 @@ class Master extends Thread
 				self::log('"'.$name.'" collection: '.$collection->getNumber().' of child threads remaining...', Logger::L_INFO);
 				while($collection->getNumber() > 0)
 				{
-					$this->sigwait(Daemon::getConfig('sigwait'));
+					$this->sigwait(Config::get('Daemon.sigwait'));
 					continue;
 				}
 			}
 		}
         file_put_contents($this->pidfile, '');
         self::log('Getting shutdown...');
+		$this->onShutdown();
 		parent::shutdown();
     }
 
@@ -254,7 +254,7 @@ class Master extends Thread
 			self::log('"'.$name.'" collection: '.$collection->getNumber().' of child threads remaining...', Logger::L_INFO);
 			while($collection->getNumber() > 0)
 			{
-				$this->sigwait(Daemon::getConfig('sigwait'));
+				$this->sigwait(Config::get('Daemon.sigwait'));
 				continue;
 			}
 			unset($this->child_collections[$name]);

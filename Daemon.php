@@ -21,11 +21,11 @@ class Daemon
 
 	const DEFAULT_CONFIG_FILE = 'config.yml';
 	//runmodes
+	const RUNMODE_HELP = 'help';
 	const RUNMODE_START = 'start';
 	const RUNMODE_STOP = 'stop';
 	const RUNMODE_RESTART = 'restart';
 	const RUNMODE_CHECK = 'check';
-	const RUNMODE_API = 'api';
 
     public static $pid;
     public static $pidfile;
@@ -35,45 +35,57 @@ class Daemon
     protected static $runmode = FALSE;
     protected static $args = array('Daemon' => array(),'Application' => array());  //параметры, передаваемые демону в командной строке или в методе Daemon::init()
     protected static $appl = FALSE;                     //выполняемое приложение
-	protected static $args_string_pattern = "#^\b(?<runmode>start|stop|restart|check|api)\b\s*(?<args_string>.*)?$#";
+	protected static $args_string_pattern = "#^\b(?<runmode>start|stop|restart|check)\b\s*(?<args_string>.*)?$#";
 
 	//TODO: а точно ли это нужно?
 	protected static $allowed_runmodes = array(
+		Daemon::RUNMODE_HELP,
 		Daemon::RUNMODE_START,
 		Daemon::RUNMODE_STOP,
 		Daemon::RUNMODE_RESTART,
 		Daemon::RUNMODE_CHECK,
-		Daemon::RUNMODE_API,
 	);
 
     /**
      * инициализация демона и его входных параметров
      */
-    protected static function init(Application\IApplication $_appl = null)
+    protected static function init(Application\IApplication $appl = null)
     {
 		try {
 			//разберем аргументы, переданные через командную строку
 			static::$args = static::parseArgsString(implode(' ', array_slice($_SERVER['argv'],1)));
 			//загрузим конфиг из файла
 			Config::load(empty(static::$args['c']) ? getcwd().'/'.self::DEFAULT_CONFIG_FILE : static::$args['c']);
-			//show help
-			if(isset(static::$args['h']) && static::$args['h'] === TRUE)
-			{
-				static::showHelp();
-				exit;
-			}
 
 			//объединяем параметры, переданные через командную строку и из файла конфигурации
 			Config::mergeArgs(static::$args);
 
-			if(empty(static::$appl) && ! empty($_appl))
+			//show help
+			if(Config::get('Flags.help'))
 			{
-				static::setApplication($_appl);
+				static::$runmode = static::RUNMODE_HELP;
+			}
+
+			//открываем лог файл
+			Logger::init();
+
+			//создаем pid-файл или берем из него значение pid процесса, если он уже существует
+			if(static::getPid())
+			{
+				return 1;
+			}
+
+			if(empty(static::$appl) && ! empty($appl))
+			{
+				static::setApplication($appl);
 			}
 		} catch(\Exception $e) {
 			echo $e->getMessage().PHP_EOL;
-			exit(1);
+
+			return 1;
 		}
+
+		return 0;
     }
 
 	public static function getName()
@@ -84,49 +96,31 @@ class Daemon
     /**
      * запускаем, останавливаем или перезапускаем демон в зависимости от $runmode
      */
-    public static function run(Application\IApplication $_appl = null)
+    public static function run(Application\IApplication $appl = null)
     {
-		static::init($_appl);
-
-		if(static::$runmode == Daemon::RUNMODE_START) {
-			static::start();
-		} elseif(static::$runmode == static::RUNMODE_STOP) {
-			$stop_mode = 1;
-			if(isset(static::$config['f']) && static::$config['f'] == TRUE)
+		if( ! ($result = static::init($appl)))
+		{
+			switch (static::$runmode)
 			{
-				$stop_mode = 2;
+				case Daemon::RUNMODE_HELP:
+					$result = static::showHelp();
+					break;
+				case Daemon::RUNMODE_START:
+					$result = static::start();
+					break;
+				case Daemon::RUNMODE_STOP:
+					$result = static::stop();
+					break;
+				case Daemon::RUNMODE_RESTART:
+					$result = static::restart();
+					break;
+				case Daemon::RUNMODE_CHECK:
+					$result = static::check();
+					break;
 			}
-			static::stop($stop_mode);
-		} elseif(static::$runmode == Daemon::RUNMODE_RESTART) {
-			static::restart();
-		} elseif(static::$runmode == Daemon::RUNMODE_CHECK) {
-			if(static::check()) {
-				exit(0);
-			} else {
-				exit(1);
-			}
-		}elseif(static::$runmode == Daemon::RUNMODE_API) {
-			//TODO: убрать этот RUNMODE из класса демона
-			if( ! static::$appl->hasApiSupport())
-			{
-				Daemon::logError("Application does not support Api", true);
-			}
-			//выделим нужные параметры для передачи в апи (action + params)
-			$api_params = array();
-			if( ! empty(static::$args['appl']['action']))
-			{
-				$api_params['action'] = static::$args['appl']['action'];
-				unset(static::$args['appl']['action']);
-			}
-			if( ! empty(static::$args['appl']['params']))
-			{
-				$api_params['params'] = json_decode(static::$args['appl']['params'], true);
-				unset(static::$args['appl']['params']);
-			}
-			static::$appl->applyArgs(static::$args['appl']);
-			echo static::$appl->sendToApi($api_params).PHP_EOL;
-			exit(0);
 		}
+
+		exit($result);
     }
 
     /**
@@ -134,11 +128,6 @@ class Daemon
      */
     public static function start()
     {
-		//открываем лог файл
-		Logger::init();
-
-		//создаем pid-файл или берем из него значение pid процесса, если он уже существует
-		static::getPid();
 
 		if(empty(static::$appl))
 		{
@@ -147,9 +136,9 @@ class Daemon
 
 		static::log('starting '.static::getName().'...', Logger::L_QUIET, TRUE);
 
-        if (static::check()) {
+        if ( ! static::check()) {
             static::logError('[START] phpd with pid-file \'' . static::$pidfile . '\' is running already (PID ' . static::$pid . ')', TRUE);
-            exit;
+            return 1;
         }
 
         //передаем приложению ссылку на мастерский процесс
@@ -164,8 +153,9 @@ class Daemon
         if(-1 === static::$pid)
         {
             static::logError('Could not start master', TRUE);
-            exit(1);
+			return 1;
         }
+		return 0;
     }
 
 
@@ -173,34 +163,32 @@ class Daemon
 	{
 		static::stop();
 		sleep(1);
-		static::start();
+		return static::start();
 	}
 
 
 	public static function check()
 	{
-		return static::$pid && posix_kill(static::$pid, 0);
+		return intval( ! (static::$pid && posix_kill(static::$pid, 0)));
 	}
 
 
     /**
      * останавливаем демон
      */
-    public static function stop($mode = 1)
+    public static function stop()
     {
-		//открываем лог файл
-		static::openLogs();
+		$mode = Config::get('Flags.force', false);
 
-		//создаем pid-файл или берем из него значение pid процесса, если он уже существует
-		static::getPid();
-
-        static::log('Stoping '.static::getName().' (PID ' . static::$pid . ') ...', Logger::L_MIN, TRUE);
-        $ok = static::$pid && posix_kill(static::$pid, $mode === 2 ? SIGINT : SIGTERM);
+        static::log('Stoping '.static::getName().' (PID ' . static::$pid . ') ...', Logger::L_QUIET, TRUE);
+        $ok = static::$pid && posix_kill(static::$pid, $mode ? SIGINT : SIGTERM);
         if (!$ok) {
             static::logError('it seems that daemon is not running' . (static::$pid ? ' (PID ' . static::$pid . ')' : ''), TRUE);
 			file_put_contents(static::$pidfile, '');
+			return 1;
         }
         static::$pid = 0;
+		return 0;
     }
 
     /**
@@ -242,10 +230,10 @@ class Daemon
             static::$pid = (int)file_get_contents(static::$pidfile);    //если файл есть, то берем оттуда pid работающего процесса
         }
 
-        if(static::$pid === FALSE)        //прерываем выполнение, если возникала ошибка
+        if(FALSE === static::$pid)        //прерываем выполнение, если возникала ошибка
         {
-            static::log('Exits', Logger::L_MIN, TRUE);
-            exit();
+            static::log('Failed to get pid', Logger::L_QUIET, TRUE);
+			return 1;
         }
 
     }
@@ -264,7 +252,7 @@ class Daemon
 			static::setRunmode($matches['runmode']);
 			$args = explode(' ',$matches['args_string']);
 		} else {
-			$out['h'] = true;
+			static::setRunmode(self::RUNMODE_HELP);
 		}
 
         $last_arg = NULL;
@@ -306,15 +294,16 @@ class Daemon
     //выводит справку
 	public static function showHelp()
 	{
-		$help_message .= "Usage: ./%s   {start|stop|restart|check|api}   <args>".PHP_EOL.PHP_EOL;
+		$help_message .= "Usage: ./%s   {%s}   <args>".PHP_EOL.PHP_EOL;
 		$help_message .= Config::getHelp();
-		printf($help_message,basename($_SERVER['argv'][0]));
+		printf($help_message, basename($_SERVER['argv'][0], implode('|', static::$allowed_runmodes)));
 		echo PHP_EOL;
+		return 0;
 	}
 
-	public static function setApplication(Application\IApplication $_appl)
+	public static function setApplication(Application\IApplication $appl)
 	{
-		static::$appl = $_appl;
+		static::$appl = $appl;
 	}
 
 	protected static function setRunmode($runmode)

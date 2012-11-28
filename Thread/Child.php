@@ -110,10 +110,18 @@ class Child extends Thread
      */
     public function shutdown()
     {
-		call_user_func($this->onshutdown_function);
 		static::log(getmypid() . ' is getting shutdown', Logger::L_DEBUG);
         static::log('Parent PID - '.posix_getppid(), Logger::L_TRACE);
+		$this->onShutdown();
 		parent::shutdown();
+    }
+
+   /**
+    * выполняется при завершении работы процесса
+    */
+    public function onShutdown()
+    {
+		call_user_func($this->onshutdown_function);
     }
 
 }
