@@ -6,8 +6,6 @@ use \Daemon\Utils\Helper;
 //TODO: изучить тонкости сокетных соединений
 class Connection
 {
-	//const DELIMITER = "\n\n============\n\n";
-	//TODO разделитель переводить в символы при передаче в сокет
 	const DELIMITER = "\u00C0\u00C1\u00C2\u00C3\u00C4\u00C5\u00C6\u00C7";
 	const READ_LENGTH = 102400;
 	const RESOURCE_TYPE = 'Socket';
@@ -26,6 +24,7 @@ class Connection
 		$this->id = $id;
 	}
 
+	//TODO пересмотреть деление потока на сообщения, установить лимиты на разовое чтение
 	public function read()
 	{
 		$data = '';
@@ -36,7 +35,7 @@ class Connection
 		}
 		if( ! empty($data))
 		{
-			$data = explode(self::DELIMITER, $data);
+			$data = explode($this->getDelimiter(), $data);
 			foreach($data as $e)
 			{
 				if( ! empty($e))
@@ -52,7 +51,7 @@ class Connection
 
 	public function write(Envelope $envelope)
 	{
-		if( ! socket_write($this->resource, $envelope.self::DELIMITER))
+		if( ! socket_write($this->resource, $envelope.$this->getDelimiter()))
 		{
 			$this->throwError("Failed to write to socket");
 		}
@@ -66,5 +65,10 @@ class Connection
 	protected function throwError($prefix = '')
 	{
 		throw new \Exception(rtrim($prefix, '.').". Socket error #".socket_last_error().": ".socket_strerror(socket_last_error()));
+	}
+
+	public function getDelimiter()
+	{
+		return json_decode('"'.self::DELIMITER.'"');
 	}
 }

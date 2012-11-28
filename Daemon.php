@@ -37,7 +37,6 @@ class Daemon
     protected static $appl = FALSE;                     //выполняемое приложение
 	protected static $args_string_pattern = "#^\b(?<runmode>start|stop|restart|check)\b\s*(?<args_string>.*)?$#";
 
-	//TODO: а точно ли это нужно?
 	protected static $allowed_runmodes = array(
 		Daemon::RUNMODE_HELP,
 		Daemon::RUNMODE_START,
