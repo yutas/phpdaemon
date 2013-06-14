@@ -12,5 +12,5 @@
     },
     "autoload": {
         "psr-0": { "Daemon": "" }
-    },
+    }
 }
