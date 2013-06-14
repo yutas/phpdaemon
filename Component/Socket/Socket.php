@@ -1,7 +1,8 @@
 <?php
 
-namespace Daemon\Application\Socket;
-use \Daemon\Utils\Helper as Helper;
+namespace Daemon\Component\Socket;
+
+use Daemon\Utils\Helper as Helper;
 
 /**
  * Класс реализует работу апи через сокеты

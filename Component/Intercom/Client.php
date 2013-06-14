@@ -1,7 +1,7 @@
 <?php
 
-namespace Daemon\Application\Intercom;
-use \Daemon\Application\Socket;
+namespace Daemon\Component\Intercom;
+use \Daemon\Component\Socket;
 
 /**
  * Класс реализует работу апи через сокеты

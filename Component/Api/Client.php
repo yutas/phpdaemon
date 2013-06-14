@@ -1,10 +1,11 @@
 <?php
 
-namespace Daemon\Application\Api;
-use \Daemon\Utils\Helper as Helper;
-use \Daemon\Daemon as Daemon;
-use \Daemon\Application\Socket\Client as SocketClient;
-use \Daemon\Application\Socket\Connection as SocketConnection;
+namespace Daemon\Component\Api;
+
+use Daemon\Utils\Helper as Helper;
+use Daemon\Daemon as Daemon;
+use Daemon\Component\Socket\Client as SocketClient;
+use Daemon\Component\Socket\Connection as SocketConnection;
 
 /**
  * Класс реализует работу апи через сокеты

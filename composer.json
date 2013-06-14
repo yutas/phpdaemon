@@ -1,0 +1,16 @@
+{
+    "name": "yutas/phpdaemon",
+    "description": "Framework designed for fast creation of daemons",
+    "authors": [
+        {
+            "name": "Artyom Domashevich",
+            "email": "a.domashevich@gmail.com"
+        }
+    ],
+    "require": {
+
+    },
+    "autoload": {
+        "psr-0": { "Daemon": "" }
+    },
+}

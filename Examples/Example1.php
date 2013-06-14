@@ -1,13 +1,13 @@
 <?php
-namespace Daemon\Application\Examples;
+namespace Daemon\Examples;
 
-use \Daemon\Application\Application;
-use \Daemon\Application\Config;
-use \Daemon\Application\Socket;
-use \Daemon\Application\Intercom;
-use \Daemon\Application\Intercom\Message as IntercomMessage;
-use \Daemon\Application\Api;
-use \Daemon\Utils\Logger;
+use Daemon\Component\Application\Application;
+use Daemon\Utils\Config;
+use Daemon\Component\Socket;
+use Daemon\Component\Intercom;
+use Daemon\Component\Intercom\Message as IntercomMessage;
+use Daemon\Component\Api;
+use Daemon\Utils\Logger;
 
 class Example1 extends Application
 {

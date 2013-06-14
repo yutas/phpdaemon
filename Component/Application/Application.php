@@ -1,7 +1,8 @@
 <?php
-namespace Daemon\Application;
-use \Daemon\Daemon;
-use \Daemon\Utils\Config;
+namespace Daemon\Component\Application;
+
+use Daemon\Daemon;
+use Daemon\Utils\Config;
 
 abstract class Application implements IApplication
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace Daemon\Application\Socket;
+namespace Daemon\Component\Socket;
 
 class Message
 {

@@ -1,7 +1,7 @@
 <?php
 
-namespace Daemon\Application\Socket;
-use \Daemon\Utils\Helper;
+namespace Daemon\Component\Socket;
+use Daemon\Utils\Helper;
 
 //TODO: изучить тонкости сокетных соединений
 class Connection

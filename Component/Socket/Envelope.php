@@ -1,5 +1,5 @@
 <?php
-namespace Daemon\Application\Socket;
+namespace Daemon\Component\Socket;
 
 /**
  * Envelope - класс-конверт, который будет содержать адресата, отправителя и любое сообщение

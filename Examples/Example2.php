@@ -1,8 +1,8 @@
 <?php
-namespace Daemon\Application\Examples;
+namespace Daemon\Component\Examples;
 
-use \Daemon\Application\Application;
-use \Daemon\Application\Config;
+use \Daemon\Component\Application\Application;
+use \Daemon\Utils\Config;
 
 class Example2 extends Application
 {

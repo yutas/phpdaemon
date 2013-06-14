@@ -1,9 +1,10 @@
 <?php
 
-namespace Daemon\Application\Socket;
+namespace Daemon\Component\Socket;
+
 use Daemon\Daemon;
-use \Daemon\Utils\Helper;
-use \Daemon\Utils\Logger;
+use Daemon\Utils\Helper;
+use Daemon\Utils\Logger;
 
 /**
  * Класс реализует работу апи через сокеты

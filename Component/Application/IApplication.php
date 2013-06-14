@@ -1,5 +1,5 @@
 <?php
-namespace Daemon\Application;
+namespace Daemon\Component\Application;
 
 interface IApplication
 {
