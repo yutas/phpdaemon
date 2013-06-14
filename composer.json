@@ -12,5 +12,6 @@
     },
     "autoload": {
         "psr-0": { "Daemon": "" }
-    }
+    },
+    "target-dir": "Daemon"
 }
