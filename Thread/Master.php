@@ -1,19 +1,22 @@
 <?php
 namespace Daemon\Thread;
 
-use \Daemon\Daemon;
-use \Daemon\Thread\Thread;
-use \Daemon\Thread\Child as Thread_Child;
-use \Daemon\Thread\Collection as Thread_Collection;
-use \Daemon\Utils\Config;
-use \Daemon\Utils\Logger;
+use Daemon\Daemon;
+use Daemon\Thread\Thread;
+use Daemon\Thread\Child as Thread_Child;
+use Daemon\Thread\Collection as Thread_Collection;
+use Daemon\Utils\Config;
+use Daemon\Utils\Logger;
+use Daemon\Utils\LogTrait;
+use Daemon\Component\Application\IApplication;
+use Daemon\Component\Application\Application;
 
 /**
  * класс описывает мастерский процесс демона
  */
 class Master extends Thread
 {
-	use \Daemon\Utils\LogTrait;
+	use LogTrait;
 
 	const MAIN_COLLECTION_NAME = 'main';
 
@@ -81,12 +84,11 @@ class Master extends Thread
 			gc_enable();
 
 			//выполняем функцию приложения до рабочего цикла
-			$this->appl->runBefore();
+			call_user_func([$this->appl, IApplication::ON_RUN_METHOD]);
 
 			//самый главный цикл
 			while (TRUE) {
-				if(TRUE === $this->appl->run())      //если функция вернула TRUE
-				{
+				if(TRUE === call_user_func([$this->appl, IApplication::RUN_METHOD])) {
 					//прекращаем цикл
 					break;
 				}
@@ -98,8 +100,6 @@ class Master extends Thread
 				pcntl_signal_dispatch();
 			}
 
-			//выполняем функцию приложения после рабочего цикла
-			$this->appl->runAfter();
 		} catch(\Exception $e) {
 			static::log($e->getMessage());
 		}
@@ -118,7 +118,7 @@ class Master extends Thread
      * @param <user_function> $_after
      * @return $pid
      */
-    public function spawnChild($_before = FALSE, $_runtime = FALSE, $_after = FALSE, $_onshutdown = FALSE, $collection_name = self::MAIN_COLLECTION_NAME)
+    public function spawnChild(IApplication $appl, $collection_name = self::MAIN_COLLECTION_NAME)
     {
         if($this->canSpawnChild($collection_name))     //если еще есть свободные места для дочерних процессов
         {
@@ -131,10 +131,7 @@ class Master extends Thread
             $thread = new Thread_Child;
 
             //инициализируем функции
-            $thread->setRunFunction($_runtime);
-            $thread->setRunBeforeFunction($_before);
-            $thread->setRunAfterFunction($_after);
-            $thread->setOnShutdownFunctions($_onshutdown);
+            $thread->setApplication($appl);
 
             //запускаем процесс
             $pid = $thread->start();
@@ -153,9 +150,9 @@ class Master extends Thread
     /**
      * инициализируем выполняемое приложение
      */
-    public function setApplication(\Daemon\Application\IApplication $_appl)
+    public function setApplication(IApplication $appl)
     {
-        $this->appl = clone $_appl;
+        $this->appl = clone $appl;
     }
 
    /**

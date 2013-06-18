@@ -1,10 +1,12 @@
 <?php
 
 namespace Daemon;
-use \Daemon\Utils\Helper;
-use \Daemon\Utils\Logger;
-use \Daemon\Utils\LogTrait;
-use \Daemon\Utils\Config;
+
+use Daemon\Utils\Helper;
+use Daemon\Utils\Logger;
+use Daemon\Utils\LogTrait;
+use Daemon\Utils\Config;
+use Daemon\Component\Application\IApplication;
 
 /**
  * Демон состоит из двух частей:
@@ -47,7 +49,7 @@ class Daemon
     /**
      * инициализация демона и его входных параметров
      */
-    protected static function init(Application\IApplication $appl = null)
+    protected static function init(IApplication $appl = null)
     {
 		//TODO продумать логику исключений и их отлова
 		try {
@@ -60,22 +62,21 @@ class Daemon
 			Config::mergeArgs(static::$args);
 
 			//show help
-			if(Config::get('Flags.help'))
-			{
+			if(Config::get('Flags.help')) {
 				static::setRunmode(self::RUNMODE_HELP);
 			}
 
 			//открываем лог файл
-			Logger::init();
+			Logger::init(static::getName());
+
+            static::$pidfile = rtrim(Config::get('Daemon.pid_dir'), '/') . '/' . static::getName() . '.pid';
 
 			//создаем pid-файл или берем из него значение pid процесса, если он уже существует
-			if(static::getPid())
-			{
+			if(static::getPid()) {
 				return 1;
 			}
 
-			if(empty(static::$appl) && ! empty($appl))
-			{
+			if(empty(static::$appl) && ! empty($appl)) {
 				static::setApplication($appl);
 			}
 		} catch(\Exception $e) {
@@ -95,12 +96,10 @@ class Daemon
     /**
      * запускаем, останавливаем или перезапускаем демон в зависимости от $runmode
      */
-    public static function run(Application\IApplication $appl = null)
+    public static function run(IApplication $appl = null)
     {
-		if( ! ($result = static::init($appl)))
-		{
-			switch (static::$runmode)
-			{
+		if( ! ($result = static::init($appl))) {
+			switch (static::$runmode) {
 				case self::RUNMODE_HELP:
 					$result = static::showHelp();
 					break;
@@ -195,42 +194,27 @@ class Daemon
      */
     public static function getPid()
     {
-        static::$pidfile = Config::get('Daemon.pid_file');
-
-        if (!file_exists(static::$pidfile))   //если pid-файла нет
-        {
-            if (!touch(static::$pidfile))     //и его нельзя создать
-            {
-                static::logError('Couldn\'t create or find pid-file \'' . static::$pidfile . '\'', TRUE);       //пишем ошибку в лог
+        if (!file_exists(static::$pidfile)) {
+            if (!touch(static::$pidfile)) {
+                static::logError('Couldn\'t create or find pid-file \'' . static::$pidfile . '\'', TRUE);
                 static::$pid = FALSE;
+            } else {
+                static::$pid = 0;
             }
-            else
-            {
-                static::$pid = 0;                 //если можно создать - все в порядке
-            }
-        }
-        elseif (!is_file(static::$pidfile))   //если это не файл вообще, а папка, к примеру
-        {
-            static::logError('Pid-file \'' . static::$pidfile . '\' must be a regular file', TRUE); //пишем ошибку в лог
+        } elseif (!is_file(static::$pidfile)) {
+            static::logError('Pid-file \'' . static::$pidfile . '\' must be a regular file', TRUE);
             static::$pid = FALSE;
-        }
-        elseif (!is_writable(static::$pidfile))   //если файл недоступен для записи
-        {
-            static::logError('Pid-file \'' . static::$pidfile . '\' must be writable', TRUE);           //пишем ошибку в лог
+        } elseif (!is_writable(static::$pidfile)) {
+            static::logError('Pid-file \'' . static::$pidfile . '\' must be writable', TRUE);
             static::$pid = FALSE;
-        }
-        elseif (!is_readable(static::$pidfile))   //если файл недоступен для чтения
-        {
-            static::logError('Pid-file \'' . static::$pidfile . '\' must be readable', TRUE);           //пишем ошибку в лог
+        } elseif (!is_readable(static::$pidfile)) {
+            static::logError('Pid-file \'' . static::$pidfile . '\' must be readable', TRUE);
             static::$pid = FALSE;
-        }
-        else
-        {
-            static::$pid = (int)file_get_contents(static::$pidfile);    //если файл есть, то берем оттуда pid работающего процесса
+        } else {
+            static::$pid = (int)file_get_contents(static::$pidfile);
         }
 
-        if(FALSE === static::$pid)        //прерываем выполнение, если возникала ошибка
-        {
+        if(FALSE === static::$pid) {
             static::log('Failed to get pid', Logger::L_QUIET, TRUE);
 			return 1;
         }
@@ -247,7 +231,7 @@ class Daemon
 		$args = array();
         $out = array();
         //инициализируем runmode
-		if(preg_match(static::$args_string_pattern,$args_string,$matches)) {
+		if(preg_match(static::$args_string_pattern, $args_string, $matches)) {
 			static::setRunmode($matches['runmode']);
 			$args = explode(' ',$matches['args_string']);
 		} else {
@@ -288,8 +272,7 @@ class Daemon
             }
 		}
 
-		if(empty($out['c']))
-		{
+		if(empty($out['c'])) {
 			$out['c'] = getcwd().'/'.self::DEFAULT_CONFIG_FILE;
 		}
 
@@ -306,19 +289,16 @@ class Daemon
 		return 0;
 	}
 
-	public static function setApplication(Application\IApplication $appl)
+	public static function setApplication(IApplication $appl)
 	{
 		static::$appl = $appl;
 	}
 
 	protected static function setRunmode($runmode)
 	{
-		if( ! empty($runmode) && in_array($runmode, static::$allowed_runmodes) || (self::RUNMODE_HELP === $runmode))
-		{
+		if( ! empty($runmode) && in_array($runmode, static::$allowed_runmodes) || (self::RUNMODE_HELP === $runmode)) {
 			static::$runmode = $runmode;
-		}
-		else
-		{
+		} else {
 			static::$runmode = self::RUNMODE_HELP;
 		}
 	}

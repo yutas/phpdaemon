@@ -16,11 +16,17 @@ class Logger
     protected static $resource;		//указатель на файл логов
 	protected static $class_name_cache = array();
 
-	public static function init()
+	public static function init($name)
 	{
+        if (empty($name)) {
+            throw new Exception('Log name must be defined');
+        }
+
+        static::$filename = rtrim(Config::get('Logger.log_dir'), '/') . '/' . strtolower($name) . '.log';
+
 		self::openLogs();
-		if(is_string(Config::get('Logger.verbose')))
-		{
+
+		if(is_string(Config::get('Logger.verbose'))) {
 			$constant = __NAMESPACE__.'\\'.Config::get('Logger.verbose');
 			Config::set('Logger.verbose', defined($constant) ? constant($constant) : intval(Config::get('Logger.verbose')));
 		}
@@ -69,7 +75,6 @@ class Logger
             self::$resource = FALSE;
         }
         //имя файла логов
-        self::$filename = Config::get('Logger.log_file');
 		self::$resource = fopen(self::$filename, 'a+');
     }
 

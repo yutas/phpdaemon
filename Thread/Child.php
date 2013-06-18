@@ -1,8 +1,9 @@
 <?php
 namespace Daemon\Thread;
-use \Daemon\Daemon as Daemon;
-use \Daemon\Utils\Logger;
-use \Daemon\Utils\Config;
+use Daemon\Daemon as Daemon;
+use Daemon\Utils\Logger;
+use Daemon\Utils\Config;
+use Daemon\Component\Application\IApplication;
 
 class Child extends Thread
 {
@@ -23,32 +24,19 @@ class Child extends Thread
         proc_nice($this->priority);
         gc_enable();
 
-        if( $this->before_function !== FALSE && is_callable($this->before_function))      //если задана функция до рабочего цикла
-        {
-            //выполняем ее
-            call_user_func($this->before_function);
-        }
+        call_user_func([$this->appl, IApplication::ON_RUN_METHOD]);
 
-        if( $this->runtime_function !== FALSE && is_callable($this->runtime_function))     //если задана функция рабочего цикла
-        {
-            while (TRUE) {
-                if(TRUE === call_user_func($this->runtime_function))    //если функция вернула TRUE
-                {
-                    //прекращаем цикл
-                    break;
-                }
-                //ожидаем заданное время для получения сигнала операционной системы
-                $this->sigwait(Config::get('Daemon.sigwait'));
+        while (TRUE) {
 
-                //если сигнал был получен, вызываем связанную с ним функцию
-                pcntl_signal_dispatch();
+            if(TRUE === call_user_func([$this->appl, IApplication::RUN_METHOD]))
+            {
+                break;
             }
-        }
+            //ожидаем заданное время для получения сигнала операционной системы
+            $this->sigwait(Config::get('Daemon.sigwait'));
 
-        if( $this->after_function !== FALSE && is_callable($this->after_function))       //если задана функция после рабочего цикла
-        {
-            //выполняем и ее
-            call_user_func($this->after_function);
+            //если сигнал был получен, вызываем связанную с ним функцию
+            pcntl_signal_dispatch();
         }
     }
 
@@ -56,54 +44,12 @@ class Child extends Thread
     /**
      * передаем ссылку на приложение
      */
-    public function setApplication(Application_Base $_appl)
+    public function setApplication(IApplication $appl)
     {
-        $this->appl = clone $appl;
+        // $this->appl = clone $appl;
+        $this->appl = $appl;
     }
 
-
-    /**
-     * Устанавливаем функцию, которая будет выполнятся до главного цикла
-     */
-    public function setRunBeforeFunction($_function)
-    {
-        if(is_callable($_function))
-        {
-            $this->before_function = $_function;
-        }
-    }
-
-
-    /**
-     * ... в главном цикле
-     */
-    public function setRunFunction($_function)
-    {
-        if(is_callable($_function))
-        {
-            $this->runtime_function = $_function;
-        }
-    }
-
-
-    /**
-     * ... после главного цикла
-     */
-    public function setRunAfterFunction($_function)
-    {
-        if(is_callable($_function))
-        {
-            $this->after_function = $_function;
-        }
-    }
-
-	public function setOnShutdownFunctions($_function)
-	{
-        if(is_callable($_function))
-        {
-            $this->onshutdown_function = $_function;
-        }
-	}
 
     /**
      * завершение работы
@@ -121,6 +67,6 @@ class Child extends Thread
     */
     public function onShutdown()
     {
-		call_user_func($this->onshutdown_function);
+		call_user_func([$this->appl, IApplication::ON_SHUTDOWN_METHOD]);
     }
 }

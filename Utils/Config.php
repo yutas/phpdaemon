@@ -32,40 +32,34 @@ class Config
 
 	public static function set($path, $value)
 	{
-		if(Helper::array_set(static::$data, $path, $value))
-		{
+		if(Helper::array_set(static::$data, $path, $value)) {
 			unset(self::$cache[$path]);
 			return true;
 		}
 	}
 
 
-	public static function load($config_file)
+	public static function load($config_file = null, $config_data = null)
 	{
-		if ( ! ($yaml = file_get_contents($config_file)))
-		{
+		if ( ! empty($config_file) && ! ($yaml = file_get_contents($config_file))) {
 			throw new \Exception("Failed to read config file {$config_file}");
 		}
-		if ( ! (static::$data = yaml_parse($yaml)))
-		{
+
+		if (empty($config_data) && ! (static::$data = yaml_parse($yaml))) {
 			throw new \Exception("Failed to parse config file {$config_file}");
 		}
-		self::$cache = array();
 
-		return true;
+		self::$cache = array();
 	}
 
 
 	public static function mergeArgs($args)
 	{
-		foreach($args as $alias => $value)
-		{
-			if($path = self::get("Aliases.{$alias}.path"))
-			{
+		foreach($args as $alias => $value) {
+			if($path = self::get("Aliases.{$alias}.path")) {
 				Helper::array_set(static::$data, $path, $value);
 			}
 		}
-		return true;
 	}
 
 

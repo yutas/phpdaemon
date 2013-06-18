@@ -3,10 +3,12 @@ namespace Daemon\Component\Application;
 
 use Daemon\Daemon;
 use Daemon\Utils\Config;
+use Daemon\Thread\Master;
+use Daemon\Utils\LogTrait;
 
 abstract class Application implements IApplication
 {
-	use \Daemon\Utils\LogTrait;
+	use LogTrait;
 
 	const LOG_NAME = 'Application';
 
@@ -16,16 +18,6 @@ abstract class Application implements IApplication
 
     public function  __clone(){}
 
-    //функция, которая выполняется перед главным циклом
-    public function runBefore(){}
-
-    //описывает действие, которое будет повторятся в главном цикле демона
-    //когда функция вернет TRUE, процесс завершится
-    public function run(){}
-
-    //функция, которая выполняется после главного цикла
-    public function runAfter(){}
-
 	//функция, которая выполняется по сигналу SIGUSR1 мастерскому процессу
 	public function runSigUsr1(){}
 
@@ -33,7 +25,7 @@ abstract class Application implements IApplication
 	public function runSigUsr2(){}
 
     //инициализирует ссылку на главный процесс демона
-    public function setMasterThread(\Daemon\Thread\Master $master)
+    final public function setMasterThread(Master $master)
     {
         $this->master_thread = $master;
     }
@@ -43,31 +35,15 @@ abstract class Application implements IApplication
 		return $this->master_thread;
 	}
 
-    public function spawnChild($_before = FALSE, $_runtime = FALSE, $_after = FALSE, $_onshutdown = FALSE, $collection_name = \Daemon\Thread\Master::MAIN_COLLECTION_NAME)
+    public function spawnChild(IApplication $appl, $collection_name = Master::MAIN_COLLECTION_NAME)
     {
-        $appl = clone $this;
-        $_before = $_before ? array($appl,$_before) : FALSE;
-        $_runtime = $_runtime ? array($appl,$_runtime) : FALSE;
-        $_after = $_after ? array($appl,$_after) : FALSE;
-        $_onshutdown = $_onshutdown ? array($appl,$_onshutdown) : FALSE;
-
-        return $this->getMaster()->spawnChild($_before, $_runtime, $_after, $_onshutdown, $collection_name);
+        return $this->getMaster()->spawnChild($appl, $collection_name);
     }
 
     protected function shutdown()
     {
         posix_kill(posix_getpid(),SIGTERM);
     }
-
-	/**
-	 * public function onShutdown() - is called in Master process on shutdown
-	 *
-	 * @access public
-	 * @return void
-	 */
-	public function onShutdown()
-	{
-	}
 
 	public function hasApiSupport()
 	{

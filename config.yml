@@ -35,7 +35,7 @@ Aliases:
   f:
     path: Flags.force
     help: " \t\t- force to stop"
-  a: 
+  a:
     path: Daemon.alive
     help: " \t\t- Keep daemon alive (don't daemonize)"
   o:
@@ -44,13 +44,12 @@ Aliases:
   v:
     path: Logger.verbose
     help: " \t\t- verbose daemon logs"
-  s: 
+  s:
     path: Daemon.sigwait
     help: " <number> \t- sigwait time (in microseconds)"
-  p: 
+  p:
     path: Daemon.pid_dir
     help: " <path> \t- directory for pid file"
-  l: 
+  l:
     path: Logger.log_dir
     help: " <path> \t- directory for log file"
-...
