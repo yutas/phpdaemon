@@ -37,7 +37,7 @@ class Daemon
     protected static $runmode = FALSE;
     protected static $args = array('Daemon' => array(),'Application' => array());  //параметры, передаваемые демону в командной строке или в методе Daemon::init()
     protected static $appl = FALSE;                     //выполняемое приложение
-	protected static $args_string_pattern = "#^\b(?<runmode>start|stop|restart|check)\b\s*(?<args_string>.*)?$#";
+	protected static $args_string_pattern = "#^(\b(?<runmode>start|stop|restart|check)\b)?\s*(?<args_string>.*)?$#";
 
 	protected static $allowed_runmodes = array(
 		self::RUNMODE_START,
@@ -232,10 +232,8 @@ class Daemon
         $out = array();
         //инициализируем runmode
 		if(preg_match(static::$args_string_pattern, $args_string, $matches)) {
+            $args = explode(' ',$matches['args_string']);
 			static::setRunmode($matches['runmode']);
-			$args = explode(' ',$matches['args_string']);
-		} else {
-			static::setRunmode(self::RUNMODE_HELP);
 		}
 
 		$last_arg = NULL;
@@ -282,9 +280,9 @@ class Daemon
     //выводит справку
 	public static function showHelp()
 	{
-		$help_message .= "Usage: ./%s   {%s}   <args>".PHP_EOL.PHP_EOL;
+		$help_message = "Usage: %s   {%s}   <args>".PHP_EOL.PHP_EOL;
 		$help_message .= Config::getHelp();
-		printf($help_message, basename($_SERVER['argv'][0]), implode('|', static::$allowed_runmodes));
+		printf($help_message, $_SERVER['argv'][0], implode('|', static::$allowed_runmodes));
 		echo PHP_EOL;
 		return 0;
 	}
@@ -296,10 +294,15 @@ class Daemon
 
 	protected static function setRunmode($runmode)
 	{
-		if( ! empty($runmode) && in_array($runmode, static::$allowed_runmodes) || (self::RUNMODE_HELP === $runmode)) {
+		if( ! empty($runmode) && in_array($runmode, static::$allowed_runmodes)) {
 			static::$runmode = $runmode;
 		} else {
 			static::$runmode = self::RUNMODE_HELP;
 		}
 	}
+
+    public static function setArgsStringPattern($pattern)
+    {
+        static::$args_string_pattern = $pattern;
+    }
 }
