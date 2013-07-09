@@ -33,7 +33,7 @@ class Child extends Thread
                 break;
             }
             //ожидаем заданное время для получения сигнала операционной системы
-            $this->sigwait(Config::get('Daemon.sigwait'));
+            $this->sigwait(Config::get('Daemon.child_sigwait'));
 
             //если сигнал был получен, вызываем связанную с ним функцию
             pcntl_signal_dispatch();

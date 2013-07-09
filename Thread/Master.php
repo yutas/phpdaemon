@@ -94,7 +94,7 @@ class Master extends Thread
 				}
 
 				//ожидаем заданное время для получения сигнала операционной системы
-				$this->sigwait(Config::get('Daemon.sigwait'));
+				$this->sigwait(Config::get('Daemon.master_sigwait'));
 
 				//если сигнал был получен, вызываем связанную с ним функцию
 				pcntl_signal_dispatch();
@@ -179,7 +179,7 @@ class Master extends Thread
 				static::log('"'.$name.'" collection: '.$collection->getNumber().' of child threads remaining...', Logger::L_INFO);
 				while($collection->getNumber() > 0)
 				{
-					$this->sigwait(Config::get('Daemon.sigwait'));
+					$this->sigwait(Config::get('Daemon.master_sigwait'));
 					continue;
 				}
 			}
@@ -280,7 +280,7 @@ class Master extends Thread
 			static::log('"'.$name.'" collection: '.$collection->getNumber().' of child threads remaining...', Logger::L_INFO);
 			while($collection->getNumber() > 0)
 			{
-				$this->sigwait(Config::get('Daemon.sigwait'));
+				$this->sigwait(Config::get('Daemon.master_sigwait'));
 				continue;
 			}
 			unset($this->child_collections[$name]);

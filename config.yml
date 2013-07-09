@@ -3,7 +3,8 @@
 Daemon:
   name: Example
   alive: false                  #запустить в терминале (не демонизировать)
-  sigwait: 10                 #задержка выполнения runtime для ожидания управляющих сигналов операционной системы (миллисекунды)
+  master_sigwait: 1000          #задержка выполнения runtime master-процесса для ожидания управляющих сигналов операционной системы (миллисекунды)
+  child_sigwait: 100            #задержка выполнения runtime дочернего процесса для ожидания управляющих сигналов операционной системы (миллисекунды)
   pid_file: tmp/example.pid     #папка для хранения pid-файла
 
 Application:
@@ -45,8 +46,8 @@ Aliases:
     path: Logger.verbose
     help: " \t\t- verbose daemon logs"
   s:
-    path: Daemon.sigwait
-    help: " <number> \t- sigwait time (in microseconds)"
+    path: Daemon.master_sigwait
+    help: " <number> \t- master sigwait time (in microseconds)"
   p:
     path: Daemon.pid_dir
     help: " <path> \t- directory for pid file"

@@ -193,7 +193,7 @@ abstract class Thread
     */
     public function stop($kill = FALSE)
     {
-        return posix_kill($this->pid, $kill ? SIGKILL : SIGTERM);
+        return $this->signal($kill ? SIGKILL : SIGTERM);
     }
     /* @method waitPid
     @description Checks for SIGCHLD.
