@@ -5,7 +5,9 @@ namespace Daemon;
 use Daemon\Utils\Helper;
 use Daemon\Utils\Logger;
 use Daemon\Utils\LogTrait;
+use Daemon\Utils\ExceptionTrait;
 use Daemon\Utils\Config;
+use Daemon\Component\Exception\Exception;
 use Daemon\Component\Application\IApplication;
 
 /**
@@ -19,15 +21,15 @@ use Daemon\Component\Application\IApplication;
  */
 class Daemon
 {
-	use LogTrait;
+    use LogTrait, ExceptionTrait;
 
-	const DEFAULT_CONFIG_FILE = 'config.yml';
-	//runmodes
-	const RUNMODE_HELP = 'help';
-	const RUNMODE_START = 'start';
-	const RUNMODE_STOP = 'stop';
-	const RUNMODE_RESTART = 'restart';
-	const RUNMODE_CHECK = 'check';
+    const DEFAULT_CONFIG_FILE = 'config.yml';
+    //runmodes
+    const RUNMODE_HELP = 'help';
+    const RUNMODE_START = 'start';
+    const RUNMODE_STOP = 'stop';
+    const RUNMODE_RESTART = 'restart';
+    const RUNMODE_CHECK = 'check';
 
     public static $pid;
     public static $pidfile;
@@ -37,88 +39,80 @@ class Daemon
     protected static $runmode = FALSE;
     protected static $args = array('Daemon' => array(),'Application' => array());  //параметры, передаваемые демону в командной строке или в методе Daemon::init()
     protected static $appl = FALSE;                     //выполняемое приложение
-	protected static $args_string_pattern = "#^(\b(?<runmode>start|stop|restart|check)\b)?\s*(?<args_string>.*)?$#";
+    protected static $args_string_pattern = "#^(\b(?<runmode>start|stop|restart|check)\b)?\s*(?<args_string>.*)?$#";
 
-	protected static $allowed_runmodes = array(
-		self::RUNMODE_START,
-		self::RUNMODE_STOP,
-		self::RUNMODE_RESTART,
-		self::RUNMODE_CHECK,
-	);
+    protected static $allowed_runmodes = array(
+        self::RUNMODE_START,
+        self::RUNMODE_STOP,
+        self::RUNMODE_RESTART,
+        self::RUNMODE_CHECK,
+    );
 
     /**
      * инициализация демона и его входных параметров
      */
     protected static function init(IApplication $appl = null)
     {
-		//TODO продумать логику исключений и их отлова
-		try {
-			//разберем аргументы, переданные через командную строку
-			static::$args = static::parseArgsString(implode(' ', array_slice($_SERVER['argv'],1)));
-			//загрузим конфиг из файла
-			Config::load(static::$args['c']);
 
-			//объединяем параметры, переданные через командную строку и из файла конфигурации
-			Config::mergeArgs(static::$args);
+        //разберем аргументы, переданные через командную строку
+        static::$args = static::parseArgsString(implode(' ', array_slice($_SERVER['argv'],1)));
+        //загрузим конфиг из файла
+        Config::load(static::$args['c']);
 
-			//show help
-			if(Config::get('Flags.help')) {
-				static::setRunmode(self::RUNMODE_HELP);
-			}
+        //объединяем параметры, переданные через командную строку и из файла конфигурации
+        Config::mergeArgs(static::$args);
 
-			//открываем лог файл
-			Logger::init(static::getName());
+        //show help
+        if(Config::get('Flags.help')) {
+            static::setRunmode(self::RUNMODE_HELP);
+        }
 
-            static::$pidfile = rtrim(Config::get('Daemon.pid_dir'), '/') . '/' . static::getName() . '.pid';
+        //открываем лог файл
+        Logger::init(static::getName());
 
-			//создаем pid-файл или берем из него значение pid процесса, если он уже существует
-			if(static::getPid()) {
-				return 1;
-			}
+        static::$pidfile = rtrim(Config::get('Daemon.pid_dir'), '/') . '/' . static::getName() . '.pid';
 
-			if(empty(static::$appl) && ! empty($appl)) {
-				static::setApplication($appl);
-			}
-		} catch(\Exception $e) {
-			echo $e->getMessage().PHP_EOL;
+        static::getPid();
 
-			return 1;
-		}
-
-		return 0;
+        if(empty(static::$appl) && ! empty($appl)) {
+            static::setApplication($appl);
+        }
     }
-
-	public static function getName()
-	{
-		return Config::get('Daemon.name', 'Daemon');
-	}
 
     /**
      * запускаем, останавливаем или перезапускаем демон в зависимости от $runmode
      */
     public static function run(IApplication $appl = null)
     {
-		if( ! ($result = static::init($appl))) {
-			switch (static::$runmode) {
-				case self::RUNMODE_HELP:
-					$result = static::showHelp();
-					break;
-				case self::RUNMODE_START:
-					$result = static::start();
-					break;
-				case self::RUNMODE_STOP:
-					$result = static::stop();
-					break;
-				case self::RUNMODE_RESTART:
-					$result = static::restart();
-					break;
-				case self::RUNMODE_CHECK:
-					$result = static::check();
-					break;
-			}
-		}
+        try {
 
-		exit($result);
+            static::init($appl);
+
+            switch (static::$runmode) {
+                case self::RUNMODE_HELP:
+                    static::showHelp();
+                    break;
+                case self::RUNMODE_START:
+                    static::start();
+                    break;
+                case self::RUNMODE_STOP:
+                    static::stop();
+                    break;
+                case self::RUNMODE_RESTART:
+                    static::restart();
+                    break;
+                case self::RUNMODE_CHECK:
+                    // проверка того, что процесс запущен
+                    exit(static::check());
+                    break;
+            }
+
+        } catch (Exception $e) {
+            static::log($e->getMessage(), $e->getCode());
+            exit(1);
+        }
+
+        exit(0);
     }
 
     /**
@@ -126,21 +120,19 @@ class Daemon
      */
     public static function start()
     {
+        if(empty(static::$appl))
+        {
+            static::throwException("Can't start daemon without application", Logger::L_FATAL);
+        }
 
-		if(empty(static::$appl))
-		{
-			static::logError("Can't start daemon without application");
-		}
-
-		static::log('starting '.static::getName().'...', Logger::L_QUIET, TRUE);
+        static::log('starting '.static::getName().'...', Logger::L_QUIET, TRUE);
 
         if ( ! static::check()) {
-            static::logError('[START] phpd with pid-file \'' . static::$pidfile . '\' is running already (PID ' . static::$pid . ')', TRUE);
-            return 1;
+            static::throwException(sprintf('Process with PID %s is running already (pid-file %s)', static::$pid, static::$pidfile), Logger::L_FATAL);
         }
 
         //передаем приложению ссылку на мастерский процесс
-		$master = new Thread\Master();
+        $master = new Thread\Master();
         static::$appl->setMasterThread($master);
 
         //... а мастерскому процессу ссылку на приложение
@@ -150,25 +142,23 @@ class Daemon
         static::$pid = $master->start();
         if(-1 === static::$pid)
         {
-            static::logError('Could not start master', TRUE);
-			return 1;
+            static::throwException('Could not start master', Logger::L_FATAL);
         }
-		return 0;
     }
 
 
-	public static function restart()
-	{
-		static::stop();
-		sleep(1);
-		return static::start();
-	}
+    public static function restart()
+    {
+        static::stop();
+        sleep(1);
+        static::start();
+    }
 
 
-	public static function check()
-	{
-		return intval( ! (static::$pid && posix_kill(static::$pid, 0)));
-	}
+    public static function check()
+    {
+        return intval( ! (static::$pid && posix_kill(static::$pid, 0)));
+    }
 
 
     /**
@@ -176,17 +166,20 @@ class Daemon
      */
     public static function stop()
     {
-		$mode = Config::get('Flags.force', false);
+        $mode = Config::get('Flags.force', false);
 
-        static::log('Stoping '.static::getName().' (PID ' . static::$pid . ') ...', Logger::L_QUIET, TRUE);
-        $ok = static::$pid && posix_kill(static::$pid, $mode ? SIGINT : SIGTERM);
-        if (!$ok) {
-            static::logError('it seems that daemon is not running' . (static::$pid ? ' (PID ' . static::$pid . ')' : ''), TRUE);
-			file_put_contents(static::$pidfile, '');
-			return 1;
+        static::log(sprintf('Stoping %s (PID %s)...', static::getName(), static::$pid), Logger::L_QUIET, TRUE);
+        if ( ! (static::$pid && posix_kill(static::$pid, $mode ? SIGINT : SIGTERM))) {
+            static::throwException('It seems that daemon is not running' . (static::$pid ? ' (PID ' . static::$pid . ')' : ''), Logger::L_FATAL);
+            file_put_contents(static::$pidfile, '');
         }
         static::$pid = 0;
-		return 0;
+    }
+
+
+    public static function getName()
+    {
+        return Config::get('Daemon.name', 'Daemon');
     }
 
     /**
@@ -194,53 +187,45 @@ class Daemon
      */
     public static function getPid()
     {
-        if (!file_exists(static::$pidfile)) {
-            if (!touch(static::$pidfile)) {
-                static::logError('Couldn\'t create or find pid-file \'' . static::$pidfile . '\'', TRUE);
-                static::$pid = FALSE;
-            } else {
-                static::$pid = 0;
-            }
-        } elseif (!is_file(static::$pidfile)) {
-            static::logError('Pid-file \'' . static::$pidfile . '\' must be a regular file', TRUE);
-            static::$pid = FALSE;
-        } elseif (!is_writable(static::$pidfile)) {
-            static::logError('Pid-file \'' . static::$pidfile . '\' must be writable', TRUE);
-            static::$pid = FALSE;
-        } elseif (!is_readable(static::$pidfile)) {
-            static::logError('Pid-file \'' . static::$pidfile . '\' must be readable', TRUE);
-            static::$pid = FALSE;
-        } else {
-            static::$pid = (int)file_get_contents(static::$pidfile);
+        if ( ! file_exists(static::$pidfile) && ! touch(static::$pidfile)) {
+            static::throwException('Couldn\'t create or find pid-file \'' . static::$pidfile . '\'', Logger::L_FATAL);
         }
 
-        if(FALSE === static::$pid) {
-            static::log('Failed to get pid', Logger::L_QUIET, TRUE);
-			return 1;
+        if ( ! is_file(static::$pidfile)) {
+            static::throwException('Pid-file \'' . static::$pidfile . '\' must be a regular file', Logger::L_FATAL);
         }
 
+        if ( ! is_writable(static::$pidfile)) {
+            static::throwException('Pid-file \'' . static::$pidfile . '\' must be writable', Logger::L_FATAL);
+        }
+
+        if ( ! is_readable(static::$pidfile)) {
+            static::throwException('Pid-file \'' . static::$pidfile . '\' must be readable', Logger::L_FATAL);
+        }
+
+        static::$pid = (int)file_get_contents(static::$pidfile);
     }
 
     /**
      * парсит строку параметров, передаваемых демону.
      * первым параметром должен быть runmode = {start|stop|restart}
      */
-	protected static function parseArgsString($args_string = '')
-	{
-		$matches = array();
-		$args = array();
+    protected static function parseArgsString($args_string = '')
+    {
+        $matches = array();
+        $args = array();
         $out = array();
         //инициализируем runmode
-		if(preg_match(static::$args_string_pattern, $args_string, $matches)) {
+        if(preg_match(static::$args_string_pattern, $args_string, $matches)) {
             $args = explode(' ',$matches['args_string']);
-			static::setRunmode($matches['runmode']);
-		}
+            static::setRunmode($matches['runmode']);
+        }
 
-		$last_arg = NULL;
+        $last_arg = NULL;
 
-		foreach($args as $arg) {
+        foreach($args as $arg) {
             if (preg_match('~^--(.+)~', $arg, $match)) {
-				//обрабатывает параметры вида "--param=1000"
+                //обрабатывает параметры вида "--param=1000"
                 $parts = explode('=', $match[1]);
                 $key = preg_replace('~[^a-z0-9_]+~', '', $parts[0]);
                 if (isset($parts[1])) {
@@ -250,56 +235,56 @@ class Daemon
                 }
                 $last_arg = $key;
             } elseif (preg_match('~^-([a-zA-Z0-9_]+)~', $arg, $match)) {
-				//обрабатывает параметры вида "-vvd" (только true/false)
+                //обрабатывает параметры вида "-vvd" (только true/false)
                 for ($j = 0, $jl = strlen($match[1]); $j < $jl; ++$j) {
                     $key = $match[1] {
                         $j
                     };
-					if(empty($out[$key])) {
-						$out[$key] = true;
-					} else {
-						$out[$key] = intval($out[$key]);
-						$out[$key]++;
-					}
+                    if(empty($out[$key])) {
+                        $out[$key] = 1;
+                    } else {
+                        $out[$key] = intval($out[$key]);
+                        $out[$key]++;
+                    }
                 }
                 $last_arg = $key;
-			} elseif ($last_arg !== NULL) {
-				//обрабатывает параметры вида "-s 1000"
+            } elseif ($last_arg !== NULL) {
+                //обрабатывает параметры вида "-s 1000"
                 $out[$last_arg] = $arg;
-				$last_arg = NULL;
+                $last_arg = NULL;
             }
-		}
+        }
 
-		if(empty($out['c'])) {
-			$out['c'] = getcwd().'/'.self::DEFAULT_CONFIG_FILE;
-		}
+        if(empty($out['c'])) {
+            $out['c'] = getcwd().'/'.self::DEFAULT_CONFIG_FILE;
+        }
 
         return $out;
-	}
+    }
 
     //выводит справку
-	public static function showHelp()
-	{
-		$help_message = "Usage: %s   {%s}   <args>".PHP_EOL.PHP_EOL;
-		$help_message .= Config::getHelp();
-		printf($help_message, $_SERVER['argv'][0], implode('|', static::$allowed_runmodes));
-		echo PHP_EOL;
-		return 0;
-	}
+    public static function showHelp()
+    {
+        $help_message = "Usage: %s   {%s}   <args>".PHP_EOL.PHP_EOL;
+        $help_message .= Config::getHelp();
+        printf($help_message, $_SERVER['argv'][0], implode('|', static::$allowed_runmodes));
+        echo PHP_EOL;
+        return 0;
+    }
 
-	public static function setApplication(IApplication $appl)
-	{
-		static::$appl = $appl;
-	}
+    public static function setApplication(IApplication $appl)
+    {
+        static::$appl = $appl;
+    }
 
-	protected static function setRunmode($runmode)
-	{
-		if( ! empty($runmode) && in_array($runmode, static::$allowed_runmodes)) {
-			static::$runmode = $runmode;
-		} else {
-			static::$runmode = self::RUNMODE_HELP;
-		}
-	}
+    protected static function setRunmode($runmode)
+    {
+        if( ! empty($runmode) && in_array($runmode, static::$allowed_runmodes)) {
+            static::$runmode = $runmode;
+        } else {
+            static::$runmode = self::RUNMODE_HELP;
+        }
+    }
 
     public static function setArgsStringPattern($pattern)
     {

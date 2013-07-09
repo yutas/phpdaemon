@@ -10,7 +10,16 @@ class Logger
 	const L_DEBUG	= 3;
 	const L_INFO	= 2;
 	const L_ERROR	= 1;
-	const L_QUIET	= 0;
+    const L_FATAL   = 0;
+	const L_QUIET	= -1;
+
+    protected static $labels = [
+        self::L_TRACE => 'TRACE',
+        self::L_DEBUG => 'DEBUG',
+        self::L_INFO  => 'INFO',
+        self::L_ERROR => 'ERROR',
+        self::L_FATAL => 'FATAL',
+    ];
 
 	protected static $filename;		//имя файла логов
     protected static $resource;		//указатель на файл логов
@@ -26,43 +35,14 @@ class Logger
 
 		self::openLogs();
 
-		if(is_string(Config::get('Logger.verbose'))) {
+		if(is_string(Config::get('Logger.verbose'))) {    // если уровень подробности указан только в файле конфига
 			$constant = __NAMESPACE__.'\\'.Config::get('Logger.verbose');
-			Config::set('Logger.verbose', defined($constant) ? constant($constant) : intval(Config::get('Logger.verbose')));
-		}
-	}
-
-
-	public static function logError($msg, $to_stderr = FALSE)
-	{
-		self::logWithSender($msg, 'general', $to_stderr);
-	}
-
-    /**
-     * добавляем запись в лог от имени $_sender
-     */
-    public static function logWithSender($_msg,$_sender = 'nobody', $_to_stderr = FALSE)
-    {
-        $mt = explode(' ', microtime());
-        if ( ($_to_stderr || Config::get('Logger.to_stderr')) && defined('STDERR'))   //если в настройках определен вывод в STDERR
-        {
-            //выводим логи еще и в управляющий терминал
-            fwrite(STDERR, '['.strtoupper($_sender).'] ' . $_msg . PHP_EOL);
+			Config::set('Logger.verbose', defined($constant) ? constant($constant) : static::L_FATAL);
+		} elseif(is_int(Config::get('Logger.verbose'))) {     // если уровень подробности передается дополнительно в командной строке, увеличиваем базовый из файла
+            $constant = __NAMESPACE__.'\\'.Config::getBase('Logger.verbose', static::L_FATAL);
+            $base = defined($constant) ? constant($constant) : static::L_FATAL;
+            Config::set('Logger.verbose', $base + (int) Config::get('Logger.verbose'));
         }
-        if (is_resource(self::$resource))                          //если файл логов был открыт без ошибок
-        {
-            fwrite(self::$resource, '[' . date('D, j M Y H:i:s', $mt[1]) . '.' . sprintf('%06d', $mt[0] * 1000000) . ' ' . date('O') . '] ['.strtoupper($_sender).'] ' . $_msg . PHP_EOL);
-        }
-    }
-
-	public static function logMemory($prefix = '')
-	{
-		self::log('[MEMORY] '.$prefix." Memory usage: ".round(memory_get_usage()/1024)."K", Logger::L_DEBUG);
-	}
-
-	public static function logCpu($prefix = '')
-	{
-		self::log('[CPU] '.$prefix." CPU usage: ".Helper::getCpuUsage()."%", Logger::L_DEBUG);
 	}
 
     /**
@@ -75,11 +55,40 @@ class Logger
             self::$resource = FALSE;
         }
         //имя файла логов
-		self::$resource = fopen(self::$filename, 'a+');
+        self::$resource = fopen(self::$filename, 'a+');
     }
 
 
-	public static function getLogClassName($class)
+    public static function log($msg, $level = Logger::L_ERROR, $sender = '', $to_stderr = false)
+    {
+        if($level <= Config::get('Logger.verbose'))
+        {
+            if ($level == static::L_FATAL) {
+                $to_stderr = true;
+            }
+            Logger::logWithSender(static::addLabel($msg, $level), $sender, $to_stderr);
+        }
+    }
+
+    /**
+     * добавляем запись в лог от имени $sender
+     */
+    public static function logWithSender($msg, $sender = 'nobody', $to_stderr = FALSE)
+    {
+        $mt = explode(' ', microtime());
+        if ( ($to_stderr || Config::get('Logger.to_stderr')) && defined('STDERR'))   //если в настройках определен вывод в STDERR
+        {
+            //выводим логи еще и в управляющий терминал
+            fwrite(STDERR, '['.strtoupper($sender).'] ' . $msg . PHP_EOL);
+        }
+        if (is_resource(self::$resource))                          //если файл логов был открыт без ошибок
+        {
+            fwrite(self::$resource, '[' . date('D, j M Y H:i:s', $mt[1]) . '.' . sprintf('%06d', $mt[0] * 1000000) . ' ' . date('O') . '] ['.strtoupper($sender).'] ' . $msg . PHP_EOL);
+        }
+    }
+
+
+	public static function getSenderName($class)
 	{
 		$md5 = md5($class);
 		if(empty(self::$class_name_cache[$md5]))
@@ -96,4 +105,20 @@ class Logger
 		}
 		return self::$class_name_cache[$md5];
 	}
+
+    protected function addLabel($msg, $level)
+    {
+        $label = empty(static::$labels[$level]) ? '' : '['.strtoupper(static::$labels[$level]).'] ';
+        return  $label . $msg;
+    }
+
+    public static function logMemory($prefix = '')
+    {
+        self::log('[MEMORY] '.$prefix." Memory usage: ".round(memory_get_usage()/1024)."K", Logger::L_DEBUG);
+    }
+
+    public static function logCpu($prefix = '')
+    {
+        self::log('[CPU] '.$prefix." CPU usage: ".Helper::getCpuUsage()."%", Logger::L_DEBUG);
+    }
 }

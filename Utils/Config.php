@@ -8,6 +8,7 @@ class Config
 	const PARAMS_KEY = 0;
 	const DESC_KEY = 1;
 
+    private static $base = array();
 	private static $data = array();
 	private static $cache = array();
 
@@ -29,6 +30,15 @@ class Config
 		return self::$cache[$path];
 	}
 
+    public static function getBase($path, $default = null)
+    {
+        $cachePath = 'base.' . $path;
+        if(empty(self::$cache[$cachePath]))
+        {
+            self::$cache[$cachePath] = Helper::array_get(static::$base, $path, $default);
+        }
+        return self::$cache[$cachePath];
+    }
 
 	public static function set($path, $value)
 	{
@@ -45,10 +55,11 @@ class Config
 			throw new \Exception("Failed to read config file {$config_file}");
 		}
 
-		if (empty($config_data) && ! (static::$data = yaml_parse($yaml))) {
+		if (empty($config_data) && ! ($data = yaml_parse($yaml))) {
 			throw new \Exception("Failed to parse config file {$config_file}");
 		}
 
+        static::$data = static::$base = array_merge(static::$data, $data);
 		self::$cache = array();
 	}
 
