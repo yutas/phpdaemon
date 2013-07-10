@@ -84,11 +84,11 @@ class Master extends Thread
 			gc_enable();
 
 			//выполняем функцию приложения до рабочего цикла
-			call_user_func([$this->appl, IApplication::ON_RUN_METHOD]);
+			call_user_func([$this->appl, IApplication::BASE_ON_RUN_METHOD]);
 
 			//самый главный цикл
 			while (TRUE) {
-				if(TRUE === call_user_func([$this->appl, IApplication::RUN_METHOD])) {
+				if(TRUE === call_user_func([$this->appl, IApplication::BASE_RUN_METHOD])) {
 					//прекращаем цикл
 					break;
 				}
@@ -101,7 +101,7 @@ class Master extends Thread
 			}
 
 		} catch(\Exception $e) {
-			static::log($e->getMessage());
+            $this->shutdown();
 		}
     }
 
@@ -152,7 +152,7 @@ class Master extends Thread
      */
     public function setApplication(IApplication $appl)
     {
-        $this->appl = clone $appl;
+        $this->appl = $appl;
     }
 
    /**
@@ -160,7 +160,7 @@ class Master extends Thread
     */
     public function onShutdown()
     {
-		$this->appl->onShutdown();
+		call_user_func([$this->appl, IApplication::BASE_ON_SHUTDOWN_METHOD]);
     }
 
 
@@ -169,25 +169,30 @@ class Master extends Thread
      */
     public function shutdown($kill = FALSE)
     {
-        $this->shutdown = TRUE;
-        //останавливаем все дочерние процессы
-		foreach($this->child_collections as $name => $collection) {
-			$collection->stop($kill);
-			if( ! $kill) {
-				//ждем, пока не остановятся все дочерние процессы
-				static::log('Waiting for all children of "'.$name.'" collection to shutdown...', Logger::L_INFO);
-				static::log('"'.$name.'" collection: '.$collection->getNumber().' of child threads remaining...', Logger::L_INFO);
-				while($collection->getNumber() > 0)
-				{
-					$this->sigwait(Config::get('Daemon.master_sigwait'));
-					continue;
-				}
-			}
-		}
-        file_put_contents($this->pidfile, '');
-        static::log('Getting shutdown...');
-		$this->onShutdown();
-		parent::shutdown();
+        try {
+            $this->shutdown = TRUE;
+            //останавливаем все дочерние процессы
+    		foreach($this->child_collections as $name => $collection) {
+    			$collection->stop($kill);
+    			if( ! $kill) {
+    				//ждем, пока не остановятся все дочерние процессы
+    				static::log('Waiting for all children of "'.$name.'" collection to shutdown...', Logger::L_INFO);
+    				static::log('"'.$name.'" collection: '.$collection->getNumber().' of child threads remaining...', Logger::L_INFO);
+    				while($collection->getNumber() > 0)
+    				{
+    					$this->sigwait(Config::get('Daemon.master_sigwait'));
+    					continue;
+    				}
+    			}
+    		}
+            file_put_contents($this->pidfile, '');
+            static::log('Getting shutdown...');
+    		$this->onShutdown();
+    		parent::shutdown();
+        } catch(\Exception $e) {
+            static::log($e->getMessage(), $e->getCode(), Config::get('to_stderr'), $e->getThrower());
+            exit(1);
+        }
     }
 
 

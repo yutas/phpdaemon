@@ -108,7 +108,7 @@ class Daemon
             }
 
         } catch (Exception $e) {
-            static::log($e->getMessage(), $e->getCode());
+            static::log($e->getMessage(), $e->getCode(), Config::get('to_stderr'), $e->getThrower());
             exit(1);
         }
 

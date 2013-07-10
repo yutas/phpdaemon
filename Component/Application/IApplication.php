@@ -3,9 +3,9 @@ namespace Daemon\Component\Application;
 
 interface IApplication
 {
-    const ON_RUN_METHOD      = 'onRun';
-    const RUN_METHOD         = 'run';
-    const ON_SHUTDOWN_METHOD = 'onShutdown';
+    const BASE_ON_RUN_METHOD      = 'baseOnRun';
+    const BASE_RUN_METHOD         = 'baseRun';
+    const BASE_ON_SHUTDOWN_METHOD = 'baseOnShutdown';
 
     //функция выполняется перед главным циклом
     public function onRun();
@@ -16,4 +16,15 @@ interface IApplication
 
     //функция выполняется при завершении работы демона
     public function onShutdown();
+
+
+
+    //функция-обертка для отлова исключений
+    public function baseOnRun();
+
+    //функция-обертка для отлова исключений
+    public function baseRun();
+
+    //функция-обертка для отлова исключений
+    public function baseOnShutdown();
 }

@@ -20,23 +20,27 @@ class Child extends Thread
      */
     public function run()
     {
-        static::log('starting child (PID ' . posix_getpid() . ')....', Logger::L_TRACE);
-        proc_nice($this->priority);
-        gc_enable();
+        try {
+            static::log('starting child (PID ' . posix_getpid() . ')....', Logger::L_TRACE);
+            proc_nice($this->priority);
+            gc_enable();
 
-        call_user_func([$this->appl, IApplication::ON_RUN_METHOD]);
+            call_user_func([$this->appl, IApplication::BASE_ON_RUN_METHOD]);
 
-        while (TRUE) {
+            while (TRUE) {
 
-            if(TRUE === call_user_func([$this->appl, IApplication::RUN_METHOD]))
-            {
-                break;
+                if(TRUE === call_user_func([$this->appl, IApplication::BASE_RUN_METHOD]))
+                {
+                    break;
+                }
+                //ожидаем заданное время для получения сигнала операционной системы
+                $this->sigwait(Config::get('Daemon.child_sigwait'));
+
+                //если сигнал был получен, вызываем связанную с ним функцию
+                pcntl_signal_dispatch();
             }
-            //ожидаем заданное время для получения сигнала операционной системы
-            $this->sigwait(Config::get('Daemon.child_sigwait'));
-
-            //если сигнал был получен, вызываем связанную с ним функцию
-            pcntl_signal_dispatch();
+        } catch(\Exception $e) {
+            $this->shutdown();
         }
     }
 
@@ -46,7 +50,6 @@ class Child extends Thread
      */
     public function setApplication(IApplication $appl)
     {
-        // $this->appl = clone $appl;
         $this->appl = $appl;
     }
 
@@ -56,10 +59,14 @@ class Child extends Thread
      */
     public function shutdown()
     {
-		static::log(getmypid() . ' is getting shutdown', Logger::L_DEBUG);
-        static::log('Parent PID - '.posix_getppid(), Logger::L_TRACE);
-		$this->onShutdown();
-		parent::shutdown();
+        try {
+    		static::log(getmypid() . ' is getting shutdown', Logger::L_DEBUG);
+            static::log('Parent PID - '.posix_getppid(), Logger::L_TRACE);
+    		$this->onShutdown();
+    		parent::shutdown();
+        } catch(\Exception $e) {
+            exit(1);
+        }
     }
 
    /**
@@ -67,6 +74,6 @@ class Child extends Thread
     */
     public function onShutdown()
     {
-		call_user_func([$this->appl, IApplication::ON_SHUTDOWN_METHOD]);
+		call_user_func([$this->appl, IApplication::BASE_ON_SHUTDOWN_METHOD]);
     }
 }
