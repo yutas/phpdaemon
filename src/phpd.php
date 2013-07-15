@@ -2,16 +2,10 @@
 <?php
 namespace Daemon;
 
-use Daemon\Application\Examples\Example2 as Appl;
+use Daemon\Examples\Example2 as Appl;
 use Daemon\Utils\Helper;
 
-//TODO: постараться убрать все нотисы и варнинги
-error_reporting(E_ALL ^E_NOTICE ^E_WARNING);
-date_default_timezone_set('Europe/Minsk');
-
-define("DAEMON_PATH",dirname(__FILE__)."/");
-require_once 'autoload.php';
-spl_autoload_register('daemon_autoload');
+require_once dirname(__DIR__) . '/vendor/autoload.php';
 
 //инициализируем исполняемое приложение
 $appl = new Appl();

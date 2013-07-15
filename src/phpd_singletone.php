@@ -2,14 +2,10 @@
 <?php
 namespace Daemon;
 
-use Daemon\Application\Example as Appl;
+use Daemon\Examples\Example as Appl;
 use Daemon\Thread\Master as Master;
 
-
-error_reporting(E_ALL ^E_NOTICE ^E_WARNING ^E_STRICT);
-date_default_timezone_set('Europe/Minsk');
-
-include_once "autoload.php";
+require_once dirname(__DIR__) . '/vendor/autoload.php';
 
 class DaemonSingletonExample extends DaemonSingleton
 {
