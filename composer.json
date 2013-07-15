@@ -10,11 +10,10 @@
     "require": {
         "php": ">=5.4",
         "ext-pcntl": "*",
-        "ext-yaml": "*",
+        "symfony/yaml": "*",
         "ext-posix": "*"
     },
     "autoload": {
-        "psr-0": { "Daemon": "" }
-    },
-    "target-dir": "Daemon"
+        "psr-0": { "Daemon": "src/" }
+    }
 }
