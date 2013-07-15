@@ -106,7 +106,7 @@ class Logger
 		return self::$class_name_cache[$md5];
 	}
 
-    protected function addLabel($msg, $level)
+    protected static function addLabel($msg, $level)
     {
         $label = empty(static::$labels[$level]) ? '' : '['.strtoupper(static::$labels[$level]).'] ';
         return  $label . $msg;

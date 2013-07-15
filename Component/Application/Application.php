@@ -7,6 +7,7 @@ use Daemon\Thread\Master;
 use Daemon\Utils\LogTrait;
 use Daemon\Utils\ExceptionTrait;
 use Daemon\Utils\Logger;
+use Daemon\Component\Exception\Exception;
 
 abstract class Application implements IApplication
 {
@@ -23,8 +24,12 @@ abstract class Application implements IApplication
         try {
             static::log("'onRun' method running", Logger::L_DEBUG);
             $this->onRun();
+        } catch (Exception $e) {
+            static::log($e->getMessage(), Logger::L_FATAL, $e->getThrower());
+            // ошибки в методе onRun всегда фатальны, поэтому пробрасываем исключение в управляющий процесс для его завершения
+            static::throwException($e->getMessage(), Logger::L_FATAL, $e);
         } catch (\Exception $e) {
-            static::log($e->getMessage(), Logger::L_FATAL, Config::get('to_stderr'), $e->getThrower());
+            static::log($e->getMessage(), Logger::L_FATAL);
             // ошибки в методе onRun всегда фатальны, поэтому пробрасываем исключение в управляющий процесс для его завершения
             static::throwException($e->getMessage(), Logger::L_FATAL, $e);
         }
@@ -35,12 +40,16 @@ abstract class Application implements IApplication
         try {
             static::log("'run' method running", Logger::L_DEBUG);
             $this->run();
-        } catch (\Exception $e) {
-            static::log($e->getMessage(), $e->getCode(), Config::get('to_stderr'), $e->getThrower());
+        } catch (Exception $e) {
+            static::log($e->getMessage(), $e->getCode(), $e->getThrower());
             if (Logger::L_FATAL === $e->getCode()) {
                 // в случае фатальной ошибки пробрасываем исключение в управляющий процесс для его завершения
                 static::throwException($e->getMessage(), $e->getCode(), $e);
             }
+        } catch (\Exception $e) {
+            static::log($e->getMessage(), Logger::L_FATAL);
+            // если пропустили обычное исключение, кинем фатальную ошибку
+            static::throwException($e->getMessage(), Logger::L_FATAL, $e);
         }
     }
 
@@ -49,8 +58,11 @@ abstract class Application implements IApplication
         try {
             static::log("'onShutdown' method running", Logger::L_DEBUG);
             $this->onShutdown();
+        } catch (Exception $e) {
+            static::log($e->getMessage(), $e->getCode(), $e->getThrower());
+            static::throwException($e->getMessage(), Logger::L_FATAL, $e);
         } catch (\Exception $e) {
-            static::log($e->getMessage(), $e->getCode(), Config::get('to_stderr'), $e->getThrower());
+            static::log($e->getMessage(), Logger::L_FATAL);
             static::throwException($e->getMessage(), Logger::L_FATAL, $e);
         }
     }

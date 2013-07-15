@@ -190,7 +190,7 @@ class Master extends Thread
     		$this->onShutdown();
     		parent::shutdown();
         } catch(\Exception $e) {
-            static::log($e->getMessage(), $e->getCode(), Config::get('to_stderr'), $e->getThrower());
+            static::log($e->getMessage(), $e->getCode(), $e->getThrower());
             exit(1);
         }
     }

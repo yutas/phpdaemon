@@ -77,6 +77,10 @@ class Daemon
         if(empty(static::$appl) && ! empty($appl)) {
             static::setApplication($appl);
         }
+
+        set_error_handler('Daemon\Daemon::errorHandler');
+        register_shutdown_function('Daemon\Daemon::errorHandlerFatal');
+        error_reporting(0);
     }
 
     /**
@@ -108,7 +112,10 @@ class Daemon
             }
 
         } catch (Exception $e) {
-            static::log($e->getMessage(), $e->getCode(), Config::get('to_stderr'), $e->getThrower());
+            static::log($e->getMessage(), Logger::L_FATAL, $e->getThrower());
+            exit(1);
+        } catch (\Exception $e) {
+            static::log($e->getMessage(), Logger::L_FATAL);
             exit(1);
         }
 
@@ -125,7 +132,7 @@ class Daemon
             static::throwException("Can't start daemon without application", Logger::L_FATAL);
         }
 
-        static::log('starting '.static::getName().'...', Logger::L_QUIET, TRUE);
+        static::log('starting '.static::getName().'...', Logger::L_QUIET, null, TRUE);
 
         if ( ! static::check()) {
             static::throwException(sprintf('Process with PID %s is running already (pid-file %s)', static::$pid, static::$pidfile), Logger::L_FATAL);
@@ -168,7 +175,7 @@ class Daemon
     {
         $mode = Config::get('Flags.force', false);
 
-        static::log(sprintf('Stoping %s (PID %s)...', static::getName(), static::$pid), Logger::L_QUIET, TRUE);
+        static::log(sprintf('Stoping %s (PID %s)...', static::getName(), static::$pid), Logger::L_QUIET, null, TRUE);
         if ( ! (static::$pid && posix_kill(static::$pid, $mode ? SIGINT : SIGTERM))) {
             static::throwException('It seems that daemon is not running' . (static::$pid ? ' (PID ' . static::$pid . ')' : ''), Logger::L_FATAL);
             file_put_contents(static::$pidfile, '');
@@ -289,5 +296,27 @@ class Daemon
     public static function setArgsStringPattern($pattern)
     {
         static::$args_string_pattern = $pattern;
+    }
+
+
+    public static function errorHandler($errno, $errstr, $errfile, $errline)
+    {
+        switch ($errno) {
+            case E_RECOVERABLE_ERROR:
+                throw new Exception($errstr, Logger::L_ERROR);
+                break;
+            default:
+                static::log($errstr, Logger::L_INFO);
+                break;
+        }
+    }
+
+    public static function errorHandlerFatal()
+    {
+        $error = error_get_last();
+        if ($error['type'] === E_ERROR) {
+            $msg = sprintf("%s in %s on line %d", $error['message'], $error['file'], $error['line']);
+            static::log($msg, Logger::L_FATAL);
+        }
     }
 }
