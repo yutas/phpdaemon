@@ -22,7 +22,7 @@ abstract class Application implements IApplication
     public function baseOnRun()
     {
         try {
-            static::log("'onRun' method running", Logger::L_DEBUG);
+            static::log("'onRun' method running", Logger::L_TRACE);
             $this->onRun();
         } catch (Exception $e) {
             static::log($e->getMessage(), Logger::L_FATAL, $e->getThrower());
@@ -38,7 +38,7 @@ abstract class Application implements IApplication
     public function baseRun()
     {
         try {
-            static::log("'run' method running", Logger::L_DEBUG);
+            static::log("'run' method running", Logger::L_TRACE);
             $this->run();
         } catch (Exception $e) {
             static::log($e->getMessage(), $e->getCode(), $e->getThrower());
@@ -56,7 +56,7 @@ abstract class Application implements IApplication
     public function baseOnShutdown()
     {
         try {
-            static::log("'onShutdown' method running", Logger::L_DEBUG);
+            static::log("'onShutdown' method running", Logger::L_TRACE);
             $this->onShutdown();
         } catch (Exception $e) {
             static::log($e->getMessage(), $e->getCode(), $e->getThrower());

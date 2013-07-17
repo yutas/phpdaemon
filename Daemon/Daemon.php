@@ -194,20 +194,14 @@ class Daemon
      */
     public static function getPid()
     {
-        if ( ! file_exists(static::$pidfile) && ! touch(static::$pidfile)) {
-            static::throwException('Couldn\'t create or find pid-file \'' . static::$pidfile . '\'', Logger::L_FATAL);
-        }
 
-        if ( ! is_file(static::$pidfile)) {
-            static::throwException('Pid-file \'' . static::$pidfile . '\' must be a regular file', Logger::L_FATAL);
-        }
-
-        if ( ! is_writable(static::$pidfile)) {
-            static::throwException('Pid-file \'' . static::$pidfile . '\' must be writable', Logger::L_FATAL);
-        }
-
-        if ( ! is_readable(static::$pidfile)) {
-            static::throwException('Pid-file \'' . static::$pidfile . '\' must be readable', Logger::L_FATAL);
+        try {
+            Helper::checkFile(static::$pidfile, true);
+            if ( ! file_exists(static::$pidfile) && ! touch(static::$pidfile)) {
+                throw new \Exception("Failed to create file '" . static::$pidfile . "'");
+            }
+        } catch (\Exception $e) {
+            static::throwException(sprintf("Couldn't create or find pid-file: %s", $e->getMessage()), Logger::L_FATAL);
         }
 
         static::$pid = (int)file_get_contents(static::$pidfile);

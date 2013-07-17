@@ -71,4 +71,40 @@ class Helper
 
 		return $cpu;
 	}
+
+    public static function checkFile($path, $checkWritable = false)
+    {
+        self::checkFolder(dirname($path), $checkWritable);
+        self::_checkFile($path, $checkWritable, true);
+    }
+
+    public static function checkFolder($path, $checkWritable = false)
+    {
+        self::_checkFile($path, $checkWritable, false);
+    }
+
+    private static function _checkFile($path, $checkWritable, $isFile)
+    {
+        $target = $isFile ? 'file' : 'folder';
+
+        if ( ! $checkWritable && ! file_exists($path)) {
+            throw new \Exception(ucfirst($target) . " \"$path\" does not exist");
+        }
+
+        if ($isFile && $checkWritable && ! file_exists($path) && ! touch($path)) {
+            throw new \Exception("Failed to create $target \"$path\"");
+        }
+
+        if ( ! $isFile && is_file($path) || $isFile && is_dir($path)) {
+            throw new \Exception("\"$path\" must be a $target");
+        }
+
+        if ( ! is_readable($path)) {
+            throw new \Exception(ucfirst($target) . " \"$path\" must be readable");
+        }
+
+        if ($checkWritable && ! is_writable($path)) {
+            throw new \Exception(ucfirst($target) . " \"$path\" must be writable");
+        }
+    }
 }
