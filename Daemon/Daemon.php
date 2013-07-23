@@ -53,6 +53,9 @@ class Daemon
      */
     protected static function init(IApplication $appl = null, $configFile = null)
     {
+        set_error_handler('Daemon\Daemon::errorHandler');
+        register_shutdown_function('Daemon\Daemon::errorHandlerFatal');
+        error_reporting(0);
 
         //разберем аргументы, переданные через командную строку
         static::$args = static::parseArgsString(implode(' ', array_slice($_SERVER['argv'],1)));
@@ -81,10 +84,6 @@ class Daemon
         if(empty(static::$appl) && ! empty($appl)) {
             static::setApplication($appl);
         }
-
-        set_error_handler('Daemon\Daemon::errorHandler');
-        register_shutdown_function('Daemon\Daemon::errorHandlerFatal');
-        error_reporting(0);
     }
 
     /**

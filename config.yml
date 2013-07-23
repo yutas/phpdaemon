@@ -1,19 +1,20 @@
 #Единый конфигурационный файл демона и приложения
 ---
 Daemon:
-  name: Example
+  name: example
   alive: false                  #запустить в терминале (не демонизировать)
   master_sigwait: 1000          #задержка выполнения runtime master-процесса для ожидания управляющих сигналов операционной системы (миллисекунды)
   child_sigwait: 100            #задержка выполнения runtime дочернего процесса для ожидания управляющих сигналов операционной системы (миллисекунды)
-  pid_file: tmp/example.pid     #папка для хранения pid-файла
+  pid_dir: pids                 #папка для хранения pid-файла (относительно project_root)
 
 Application:
-  max_child_count: 10
+  max_child_count: 1
+  child_ttl: 60                 # время жизни дочернего процесса (секунды)
 
 Logger:
-  log_file: tmp/example.log
-  to_stderr: false     #выводить сообщения в STDERR
-  verbose: Logger::L_ERROR  #степерь подробности логирования
+  log_dir: logs                 #папка для хранения файла логов (относительно project_root)
+  to_stderr: false              #выводить сообщения в STDERR
+  verbose: Logger::L_ERROR      #степерь подробности логирования
 
 Flags:
   help: false
@@ -47,7 +48,7 @@ Aliases:
     help: " \t\t- verbose daemon logs"
   s:
     path: Daemon.master_sigwait
-    help: " <number> \t- master sigwait time (in microseconds)"
+    help: " <number> \t- master sigwait time (in milliseconds)"
   p:
     path: Daemon.pid_dir
     help: " <path> \t- directory for pid file"

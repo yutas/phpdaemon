@@ -31,7 +31,7 @@ class Logger
             throw new Exception('Log name must be defined');
         }
 
-        static::$filename = rtrim(Config::get('Logger.log_dir'), '/') . '/' . strtolower($name) . '.log';
+        static::$filename = static::getLogFileName($name);
 
 		self::openLogs();
 
@@ -105,6 +105,15 @@ class Logger
 		}
 		return self::$class_name_cache[$md5];
 	}
+
+    protected static function getLogFileName($name)
+    {
+        $logDir = Config::get('Logger.log_dir');
+        if ( ! preg_match("^\/", $logDir)) {
+            $logDir = Config::get('project_root') . "/" . rtrim($logDir, '/');
+        }
+        return $logDir . '/' . strtolower($name) . '.log';
+    }
 
     protected static function addLabel($msg, $level)
     {
