@@ -51,12 +51,16 @@ class Daemon
     /**
      * инициализация демона и его входных параметров
      */
-    protected static function init(IApplication $appl = null)
+    protected static function init(IApplication $appl = null, $configFile = null)
     {
 
         //разберем аргументы, переданные через командную строку
         static::$args = static::parseArgsString(implode(' ', array_slice($_SERVER['argv'],1)));
+
         //загрузим конфиг из файла
+        if(empty(static::$args['c'])) {
+            static::$args['c'] = $configFile ? : getcwd().'/'.self::DEFAULT_CONFIG_FILE;
+        }
         Config::load(static::$args['c']);
 
         //объединяем параметры, переданные через командную строку и из файла конфигурации
@@ -70,7 +74,7 @@ class Daemon
         //открываем лог файл
         Logger::init(static::getName());
 
-        static::$pidfile = rtrim(Config::get('Daemon.pid_dir'), '/') . '/' . static::getName() . '.pid';
+        static::$pidfile = static::getPidFileName();
 
         static::getPid();
 
@@ -86,11 +90,11 @@ class Daemon
     /**
      * запускаем, останавливаем или перезапускаем демон в зависимости от $runmode
      */
-    public static function run(IApplication $appl = null)
+    public static function run(IApplication $appl = null, $configFile = null)
     {
         try {
 
-            static::init($appl);
+            static::init($appl, $configFile);
 
             switch (static::$runmode) {
                 case self::RUNMODE_HELP:
@@ -201,7 +205,7 @@ class Daemon
                 throw new \Exception("Failed to create file '" . static::$pidfile . "'");
             }
         } catch (\Exception $e) {
-            static::throwException(sprintf("Couldn't create or find pid-file: %s", $e->getMessage()), Logger::L_FATAL);
+            static::throwException(sprintf("Failed to create or find pid-file: %s", $e->getMessage()), Logger::L_FATAL);
         }
 
         static::$pid = (int)file_get_contents(static::$pidfile);
@@ -256,10 +260,6 @@ class Daemon
             }
         }
 
-        if(empty($out['c'])) {
-            $out['c'] = getcwd().'/'.self::DEFAULT_CONFIG_FILE;
-        }
-
         return $out;
     }
 
@@ -312,5 +312,14 @@ class Daemon
             $msg = sprintf("%s in %s on line %d", $error['message'], $error['file'], $error['line']);
             static::log($msg, Logger::L_FATAL);
         }
+    }
+
+    protected static function getPidFileName()
+    {
+        $pidDir = Config::get('Daemon.pid_dir');
+        if ( ! preg_match("^\/", $pidDir)) {
+            $pidDir = Config::get('project_root') . "/" . rtrim($pidDir, '/');
+        }
+        return $pidDir . '/' . static::getName() . '.pid';
     }
 }

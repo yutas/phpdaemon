@@ -1,8 +1,7 @@
 <?php
 namespace Daemon\Utils;
 
-use Daemon\Utils\Helper;
-use Symfony\Component\Yaml\Parser;
+use Symfony\Component\Yaml\Yaml;
 
 class Config
 {
@@ -56,8 +55,7 @@ class Config
 			throw new \Exception("Failed to read config file {$config_file}");
 		}
 
-        $parser = new Parser();
-		if (empty($config_data) && ! ($data = $parser->parse($yaml))) {
+		if (empty($config_data) && ! ($data = Yaml::parse($yaml))) {
 			throw new \Exception("Failed to parse config file {$config_file}");
 		}
 
