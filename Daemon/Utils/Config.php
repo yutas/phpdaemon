@@ -51,7 +51,7 @@ class Config
 
 	public static function load($config_file = null, $config_data = null)
 	{
-		if ( ! empty($config_file) && ! ($yaml = file_get_contents($config_file))) {
+		if ( ! empty($config_file) && Helper::checkFile($config_file) && ! ($yaml = file_get_contents($config_file))) {
 			throw new \Exception("Failed to read config file {$config_file}");
 		}
 

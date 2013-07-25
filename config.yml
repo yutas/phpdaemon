@@ -6,6 +6,7 @@ Daemon:
   master_sigwait: 1000          #задержка выполнения runtime master-процесса для ожидания управляющих сигналов операционной системы (миллисекунды)
   child_sigwait: 100            #задержка выполнения runtime дочернего процесса для ожидания управляющих сигналов операционной системы (миллисекунды)
   pid_dir: pids                 #папка для хранения pid-файла (относительно project_root)
+  show_php_errors: false        #вывод ошибок php
 
 Application:
   max_child_count: 1
@@ -55,3 +56,6 @@ Aliases:
   l:
     path: Logger.log_dir
     help: " <path> \t- directory for log file"
+  e:
+    path: Daemon.show_php_errors
+    help: " <path> \t- show php errors"

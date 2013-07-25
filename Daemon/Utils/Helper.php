@@ -75,12 +75,12 @@ class Helper
     public static function checkFile($path, $checkWritable = false)
     {
         self::checkFolder(dirname($path), $checkWritable);
-        self::_checkFile($path, $checkWritable, true);
+        return self::_checkFile($path, $checkWritable, true);
     }
 
     public static function checkFolder($path, $checkWritable = false)
     {
-        self::_checkFile($path, $checkWritable, false);
+        return self::_checkFile($path, $checkWritable, false);
     }
 
     private static function _checkFile($path, $checkWritable, $isFile)
@@ -106,5 +106,7 @@ class Helper
         if ($checkWritable && ! is_writable($path)) {
             throw new \Exception(ucfirst($target) . " \"$path\" must be writable");
         }
+
+        return true;
     }
 }

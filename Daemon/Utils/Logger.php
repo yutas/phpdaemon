@@ -109,7 +109,7 @@ class Logger
     protected static function getLogFileName($name)
     {
         $logDir = Config::get('Logger.log_dir');
-        if ( ! preg_match("^\/", $logDir)) {
+        if ( ! preg_match("#^\/#", $logDir)) {
             $logDir = Config::get('project_root') . "/" . rtrim($logDir, '/');
         }
         return $logDir . '/' . strtolower($name) . '.log';

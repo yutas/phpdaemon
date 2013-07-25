@@ -53,9 +53,7 @@ class Daemon
      */
     protected static function init(IApplication $appl = null, $configFile = null)
     {
-        set_error_handler('Daemon\Daemon::errorHandler');
         register_shutdown_function('Daemon\Daemon::errorHandlerFatal');
-        error_reporting(0);
 
         //разберем аргументы, переданные через командную строку
         static::$args = static::parseArgsString(implode(' ', array_slice($_SERVER['argv'],1)));
@@ -68,6 +66,11 @@ class Daemon
 
         //объединяем параметры, переданные через командную строку и из файла конфигурации
         Config::mergeArgs(static::$args);
+
+        if ( ! Config::get('Daemon.show_php_errors')) {
+            set_error_handler('Daemon\Daemon::errorHandler');
+            error_reporting(0);
+        }
 
         //show help
         if(Config::get('Flags.help')) {
@@ -316,7 +319,7 @@ class Daemon
     protected static function getPidFileName()
     {
         $pidDir = Config::get('Daemon.pid_dir');
-        if ( ! preg_match("^\/", $pidDir)) {
+        if ( ! preg_match("#^\/#", $pidDir)) {
             $pidDir = Config::get('project_root') . "/" . rtrim($pidDir, '/');
         }
         return $pidDir . '/' . static::getName() . '.pid';
