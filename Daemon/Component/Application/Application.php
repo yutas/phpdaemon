@@ -9,7 +9,7 @@ use Daemon\Utils\ExceptionTrait;
 use Daemon\Utils\Logger;
 use Daemon\Component\Exception\Exception;
 
-abstract class Application implements IApplication
+abstract class Application
 {
 	use LogTrait, ExceptionTrait;
 
@@ -18,8 +18,7 @@ abstract class Application implements IApplication
     private $master_thread = false;
 	protected $api_support = false;
 
-
-    public function baseOnRun()
+    final public function baseOnRun()
     {
         try {
             static::log("'onRun' method running", Logger::L_TRACE);
@@ -35,7 +34,7 @@ abstract class Application implements IApplication
         }
     }
 
-    public function baseRun()
+    final public function baseRun()
     {
         try {
             static::log("'run' method running", Logger::L_TRACE);
@@ -53,7 +52,7 @@ abstract class Application implements IApplication
         }
     }
 
-    public function baseOnShutdown()
+    final public function baseOnShutdown()
     {
         try {
             static::log("'onShutdown' method running", Logger::L_TRACE);
@@ -75,6 +74,16 @@ abstract class Application implements IApplication
 	//функция, которая выполняется по сигналу SIGUSR2 мастерскому процессу
 	public function runSigUsr2(){}
 
+    //функция выполняется перед главным циклом
+    abstract public function onRun();
+
+    //описывает действие, которое будет повторятся в главном цикле демона
+    //когда функция вернет TRUE, процесс завершится
+    abstract public function run();
+
+    //функция выполняется при завершении работы демона
+    abstract public function onShutdown();
+
     //инициализирует ссылку на главный процесс демона
     final public function setMasterThread(Master $master)
     {
@@ -86,7 +95,7 @@ abstract class Application implements IApplication
 		return $this->master_thread;
 	}
 
-    public function spawnChild(IApplication $appl, $collection_name = Master::MAIN_COLLECTION_NAME)
+    public function spawnChild(Application $appl, $collection_name = Master::MAIN_COLLECTION_NAME)
     {
         return $this->getMaster()->spawnChild($appl, $collection_name);
     }

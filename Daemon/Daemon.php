@@ -8,7 +8,7 @@ use Daemon\Utils\LogTrait;
 use Daemon\Utils\ExceptionTrait;
 use Daemon\Utils\Config;
 use Daemon\Component\Exception\Exception;
-use Daemon\Component\Application\IApplication;
+use Daemon\Component\Application\Application;
 
 /**
  * Демон состоит из двух частей:
@@ -51,7 +51,7 @@ class Daemon
     /**
      * инициализация демона и его входных параметров
      */
-    protected static function init(IApplication $appl = null, $configFile = null)
+    protected static function init(Application $appl = null, $configFile = null)
     {
         register_shutdown_function('Daemon\Daemon::errorHandlerFatal');
 
@@ -92,7 +92,7 @@ class Daemon
     /**
      * запускаем, останавливаем или перезапускаем демон в зависимости от $runmode
      */
-    public static function run(IApplication $appl = null, $configFile = null)
+    public static function run(Application $appl = null, $configFile = null)
     {
         try {
 
@@ -275,7 +275,7 @@ class Daemon
         return 0;
     }
 
-    public static function setApplication(IApplication $appl)
+    public static function setApplication(Application $appl)
     {
         static::$appl = $appl;
     }
@@ -297,12 +297,13 @@ class Daemon
 
     public static function errorHandler($errno, $errstr, $errfile, $errline)
     {
+        $msg = sprintf("%s in %s on line %d", $errstr, $errfile, $errline);
         switch ($errno) {
             case E_RECOVERABLE_ERROR:
-                throw new Exception($errstr, Logger::L_ERROR);
+                throw new Exception($msg, Logger::L_ERROR);
                 break;
             default:
-                static::log($errstr, Logger::L_INFO);
+                static::log($msg, Logger::L_INFO);
                 break;
         }
     }

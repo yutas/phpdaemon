@@ -3,7 +3,7 @@ namespace Daemon\Thread;
 use Daemon\Daemon as Daemon;
 use Daemon\Utils\Logger;
 use Daemon\Utils\Config;
-use Daemon\Component\Application\IApplication;
+use Daemon\Component\Application\Application;
 
 class Child extends Thread
 {
@@ -25,11 +25,11 @@ class Child extends Thread
             proc_nice($this->priority);
             gc_enable();
 
-            call_user_func([$this->appl, IApplication::BASE_ON_RUN_METHOD]);
+            call_user_func([$this->appl, 'baseOnRun']);
 
             while (TRUE) {
 
-                if(TRUE === call_user_func([$this->appl, IApplication::BASE_RUN_METHOD]))
+                if(TRUE === call_user_func([$this->appl, 'baseRun']))
                 {
                     break;
                 }
@@ -48,7 +48,7 @@ class Child extends Thread
     /**
      * передаем ссылку на приложение
      */
-    public function setApplication(IApplication $appl)
+    public function setApplication(Application $appl)
     {
         $this->appl = $appl;
     }
@@ -74,6 +74,6 @@ class Child extends Thread
     */
     public function onShutdown()
     {
-		call_user_func([$this->appl, IApplication::BASE_ON_SHUTDOWN_METHOD]);
+		call_user_func([$this->appl, 'baseOnShutdown']);
     }
 }

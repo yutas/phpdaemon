@@ -8,7 +8,6 @@ use Daemon\Thread\Collection as Thread_Collection;
 use Daemon\Utils\Config;
 use Daemon\Utils\Logger;
 use Daemon\Utils\LogTrait;
-use Daemon\Component\Application\IApplication;
 use Daemon\Component\Application\Application;
 
 /**
@@ -84,11 +83,11 @@ class Master extends Thread
 			gc_enable();
 
 			//выполняем функцию приложения до рабочего цикла
-			call_user_func([$this->appl, IApplication::BASE_ON_RUN_METHOD]);
+			call_user_func([$this->appl, 'baseOnRun']);
 
 			//самый главный цикл
 			while (TRUE) {
-				if(TRUE === call_user_func([$this->appl, IApplication::BASE_RUN_METHOD])) {
+				if(TRUE === call_user_func([$this->appl, 'baseRun'])) {
 					//прекращаем цикл
 					break;
 				}
@@ -118,7 +117,7 @@ class Master extends Thread
      * @param <user_function> $_after
      * @return $pid
      */
-    public function spawnChild(IApplication $appl, $collection_name = self::MAIN_COLLECTION_NAME)
+    public function spawnChild(Application $appl, $collection_name = self::MAIN_COLLECTION_NAME)
     {
         if($this->canSpawnChild($collection_name))     //если еще есть свободные места для дочерних процессов
         {
@@ -150,7 +149,7 @@ class Master extends Thread
     /**
      * инициализируем выполняемое приложение
      */
-    public function setApplication(IApplication $appl)
+    public function setApplication(Application $appl)
     {
         $this->appl = $appl;
     }
@@ -160,7 +159,7 @@ class Master extends Thread
     */
     public function onShutdown()
     {
-		call_user_func([$this->appl, IApplication::BASE_ON_SHUTDOWN_METHOD]);
+		call_user_func([$this->appl, 'baseShutdown']);
     }
 
 
