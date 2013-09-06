@@ -159,7 +159,7 @@ class Master extends Thread
     */
     public function onShutdown()
     {
-		call_user_func([$this->appl, 'baseShutdown']);
+		call_user_func([$this->appl, 'baseOnShutdown']);
     }
 
 
