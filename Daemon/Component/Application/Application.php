@@ -22,7 +22,7 @@ abstract class Application
     {
         try {
             static::log("'onRun' method running", Logger::L_TRACE);
-            $this->onRun();
+            return $this->onRun();
         } catch (Exception $e) {
             static::log($e->getMessage(), Logger::L_FATAL, $e->getThrower());
             // ошибки в методе onRun всегда фатальны, поэтому пробрасываем исключение в управляющий процесс для его завершения
@@ -38,7 +38,7 @@ abstract class Application
     {
         try {
             static::log("'run' method running", Logger::L_TRACE);
-            $this->run();
+            return $this->run();
         } catch (Exception $e) {
             static::log($e->getMessage(), $e->getCode(), $e->getThrower());
             if (Logger::L_FATAL === $e->getCode()) {
@@ -56,7 +56,7 @@ abstract class Application
     {
         try {
             static::log("'onShutdown' method running", Logger::L_TRACE);
-            $this->onShutdown();
+            return $this->onShutdown();
         } catch (Exception $e) {
             static::log($e->getMessage(), $e->getCode(), $e->getThrower());
             static::throwException($e->getMessage(), Logger::L_FATAL, $e);
