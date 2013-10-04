@@ -38,10 +38,10 @@ class Logger
 		if(is_string(Config::get('Logger.verbose'))) {    // если уровень подробности указан только в файле конфига
 			$constant = __NAMESPACE__.'\\'.Config::get('Logger.verbose');
 			Config::set('Logger.verbose', defined($constant) ? constant($constant) : static::L_FATAL);
-		} elseif(is_int(Config::get('Logger.verbose'))) {     // если уровень подробности передается дополнительно в командной строке, увеличиваем базовый из файла
-            $constant = __NAMESPACE__.'\\'.Config::getBase('Logger.verbose', static::L_FATAL);
-            $base = defined($constant) ? constant($constant) : static::L_FATAL;
-            Config::set('Logger.verbose', $base + (int) Config::get('Logger.verbose'));
+		} elseif(is_int(Config::get('Logger.verbose'))) {     // если уровень подробности передается в командной строке
+            // $constant = __NAMESPACE__.'\\'.Config::getBase('Logger.verbose', static::L_FATAL);
+            // $base = defined($constant) ? constant($constant) : static::L_FATAL;
+            Config::set('Logger.verbose', (int) Config::get('Logger.verbose') + 1);
         }
 	}
 
@@ -85,6 +85,11 @@ class Logger
         {
             fwrite(self::$resource, '[' . date('D, j M Y H:i:s', $mt[1]) . '.' . sprintf('%06d', $mt[0] * 1000000) . ' ' . date('O') . '] ['.strtoupper($sender).'] ' . $msg . PHP_EOL);
         }
+    }
+
+    public static function buildExceptionMsg(\Exception $e)
+    {
+        return sprintf("%s in %s on line %d", $e->getMessage(), $e->getFile(), $e->getLine());
     }
 
 

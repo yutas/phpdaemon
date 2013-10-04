@@ -24,11 +24,11 @@ abstract class Application
             static::log("'onRun' method running", Logger::L_TRACE);
             return $this->onRun();
         } catch (Exception $e) {
-            static::log($e->getMessage(), Logger::L_FATAL, $e->getThrower());
+            static::log(Logger::buildExceptionMsg($e), Logger::L_FATAL, $e->getThrower());
             // ошибки в методе onRun всегда фатальны, поэтому пробрасываем исключение в управляющий процесс для его завершения
             static::throwException($e->getMessage(), Logger::L_FATAL, $e);
         } catch (\Exception $e) {
-            static::log($e->getMessage(), Logger::L_FATAL);
+            static::log(Logger::buildExceptionMsg($e), Logger::L_FATAL);
             // ошибки в методе onRun всегда фатальны, поэтому пробрасываем исключение в управляющий процесс для его завершения
             static::throwException($e->getMessage(), Logger::L_FATAL, $e);
         }
@@ -40,13 +40,13 @@ abstract class Application
             static::log("'run' method running", Logger::L_TRACE);
             return $this->run();
         } catch (Exception $e) {
-            static::log($e->getMessage(), $e->getCode(), $e->getThrower());
+            static::log(Logger::buildExceptionMsg($e), $e->getCode(), $e->getThrower());
             if (Logger::L_FATAL === $e->getCode()) {
                 // в случае фатальной ошибки пробрасываем исключение в управляющий процесс для его завершения
                 static::throwException($e->getMessage(), $e->getCode(), $e);
             }
         } catch (\Exception $e) {
-            static::log($e->getMessage(), Logger::L_FATAL);
+            static::log(Logger::buildExceptionMsg($e), Logger::L_FATAL);
             // если пропустили обычное исключение, кинем фатальную ошибку
             static::throwException($e->getMessage(), Logger::L_FATAL, $e);
         }
@@ -58,10 +58,10 @@ abstract class Application
             static::log("'onShutdown' method running", Logger::L_TRACE);
             return $this->onShutdown();
         } catch (Exception $e) {
-            static::log($e->getMessage(), $e->getCode(), $e->getThrower());
+            static::log(Logger::buildExceptionMsg($e), $e->getCode(), $e->getThrower());
             static::throwException($e->getMessage(), Logger::L_FATAL, $e);
         } catch (\Exception $e) {
-            static::log($e->getMessage(), Logger::L_FATAL);
+            static::log(Logger::buildExceptionMsg($e), Logger::L_FATAL);
             static::throwException($e->getMessage(), Logger::L_FATAL, $e);
         }
     }
