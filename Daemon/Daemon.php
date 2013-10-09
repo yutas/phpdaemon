@@ -67,7 +67,7 @@ class Daemon
         //объединяем параметры, переданные через командную строку и из файла конфигурации
         Config::mergeArgs(static::$args);
 
-        if ( ! Config::get('Daemon.show_php_errors')) {
+        if (Config::get('Daemon.log_php_errors', true)) {
             set_error_handler('Daemon\Daemon::errorHandler');
             error_reporting(0);
         }
@@ -297,7 +297,7 @@ class Daemon
 
     public static function errorHandler($errno, $errstr, $errfile, $errline)
     {
-        $msg = sprintf("%s in %s on line %d", $errstr, $errfile, $errline);
+        $msg = sprintf("%s: %s in %s on line %d", static::getPhpErrorLevel($errno), $errstr, $errfile, $errline);
         switch ($errno) {
             case E_RECOVERABLE_ERROR:
                 throw new Exception($msg, Logger::L_ERROR);
@@ -311,9 +311,31 @@ class Daemon
     public static function errorHandlerFatal()
     {
         $error = error_get_last();
-        if ($error['type'] === E_ERROR) {
-            $msg = sprintf("%s in %s on line %d", $error['message'], $error['file'], $error['line']);
-            static::log($msg, Logger::L_FATAL);
+        $msg = sprintf("%s in %s on line %d", $error['message'], $error['file'], $error['line']);
+        static::log($msg, Logger::L_FATAL);
+    }
+
+    protected static function getPhpErrorLevel($errno)
+    {
+        switch ($errno) {
+            case E_WARNING;
+                return "E_WARNING";
+            case E_NOTICE;
+                return "E_NOTICE";
+            case E_STRICT;
+                return "E_STRICT";
+            case E_DEPRECATED;
+                return "E_DEPRECATED";
+            case E_RECOVERABLE_ERROR;
+                return "E_RECOVERABLE_ERROR";
+            case E_USER_ERROR;
+                return "E_USER_ERROR";
+            case E_USER_WARNING;
+                return "E_USER_WARNING";
+            case E_USER_NOTICE;
+                return "E_USER_NOTICE";
+            case E_USER_DEPRECATED:
+                return "E_USER_DEPRECATED";
         }
     }
 
