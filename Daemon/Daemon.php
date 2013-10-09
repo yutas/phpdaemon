@@ -183,7 +183,7 @@ class Daemon
 
         static::log(sprintf('Stoping %s (PID %s)...', static::getName(), static::$pid), Logger::L_QUIET, null, TRUE);
         if ( ! (static::$pid && posix_kill(static::$pid, $force ? SIGKILL : SIGTERM))) {
-            static::throwException('It seems that daemon is not running' . (static::$pid ? ' (PID ' . static::$pid . ')' : ''), Logger::L_FATAL);
+            static::log('It seems that daemon is not running' . (static::$pid ? ' (PID ' . static::$pid . ')' : ''), Logger::L_ERROR);
             file_put_contents(static::$pidfile, '');
         }
         static::$pid = 0;
@@ -311,8 +311,10 @@ class Daemon
     public static function errorHandlerFatal()
     {
         $error = error_get_last();
-        $msg = sprintf("%s in %s on line %d", $error['message'], $error['file'], $error['line']);
-        static::log($msg, Logger::L_FATAL);
+        if (is_array($error)) {
+            $msg = sprintf("%s in %s on line %d", $error['message'], $error['file'], $error['line']);
+            static::log($msg, Logger::L_FATAL);
+        }
     }
 
     protected static function getPhpErrorLevel($errno)
