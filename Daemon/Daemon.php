@@ -179,10 +179,10 @@ class Daemon
      */
     public static function stop()
     {
-        $mode = Config::get('Flags.force', false);
+        $force = Config::get('Flags.force', false);
 
         static::log(sprintf('Stoping %s (PID %s)...', static::getName(), static::$pid), Logger::L_QUIET, null, TRUE);
-        if ( ! (static::$pid && posix_kill(static::$pid, $mode ? SIGINT : SIGTERM))) {
+        if ( ! (static::$pid && posix_kill(static::$pid, $force ? SIGKILL : SIGTERM))) {
             static::throwException('It seems that daemon is not running' . (static::$pid ? ' (PID ' . static::$pid . ')' : ''), Logger::L_FATAL);
             file_put_contents(static::$pidfile, '');
         }

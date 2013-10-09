@@ -210,8 +210,8 @@ class Master extends Thread
     {
         //получаем pid завершившегося дочернего процесса
         $pid = pcntl_waitpid(-1, $status);
-        static::log("Child with pid $pid stoped working", Logger::L_TRACE);
         if ($pid > 0) {
+            static::log("Child with pid $pid stoped working", Logger::L_TRACE);
             //удаляем этот процесс из коллекции
             foreach($this->child_collections as $collection) {
 				if($collection->deleteChild($pid)) {
