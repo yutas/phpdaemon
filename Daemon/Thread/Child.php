@@ -60,9 +60,10 @@ class Child extends Thread
     public function shutdown()
     {
         try {
-    		static::log(getmypid() . ' is getting shutdown', Logger::L_DEBUG);
-            static::log('Parent PID - '.posix_getppid(), Logger::L_TRACE);
     		$this->onShutdown();
+            static::log(getmypid() . ' is getting shutdown', Logger::L_DEBUG);
+            static::log('Parent PID - '.posix_getppid(), Logger::L_TRACE);
+            $this->signal(posix_getppid(), SIGCHLD);
     		parent::shutdown();
         } catch(\Exception $e) {
             exit(1);
