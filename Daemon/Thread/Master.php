@@ -175,10 +175,10 @@ class Master extends Thread
     			$collection->stop($kill);
     			if( ! $kill) {
     				//ждем, пока не остановятся все дочерние процессы
-    				static::log('Waiting for all children of "'.$name.'" collection to shutdown...', Logger::L_INFO);
-    				static::log('"'.$name.'" collection: '.$collection->getNumber().' of child threads remaining...', Logger::L_INFO);
+                    static::log('Waiting for all children of "'.$name.'" collection to shutdown...', Logger::L_INFO);
     				while($collection->getNumber() > 0)
     				{
+                        static::log('"'.$name.'" collection: '.$collection->getNumber().' of child threads remaining...', Logger::L_INFO);
     					$this->sigwait(Config::get('Daemon.master_sigwait'));
     					continue;
     				}
@@ -202,10 +202,11 @@ class Master extends Thread
     {
         //получаем pid завершившегося дочернего процесса
         $pid = pcntl_waitpid(-1, $status, WNOHANG);
+        static::log("Child with pid $pid stoped working", Logger::L_TRACE);
         if ($pid > 0) {
             //удаляем этот процесс из коллекции
             foreach($this->child_collections as $collection) {
-				if($collection->deleteSpawn($pid)) {
+				if($collection->deleteChild($pid)) {
 					break;
 				}
             }

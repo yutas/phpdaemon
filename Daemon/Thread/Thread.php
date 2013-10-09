@@ -167,7 +167,7 @@ abstract class Thread
     */
     public function sigint()
     {
-        $this->shutdown(TRUE);
+        $this->shutdown();
     }
     /* @method sigquit
     @description Called when the signal SIGQUIT caught.

@@ -74,13 +74,16 @@ class Collection
 	/**
 	 * удаляем запись из коллекции при завершении работы дочернего процесса
 	 */
-	public function deleteSpawn($_spawn_id)
+	public function deleteChild($_spawn_id)
 	{
-		if(intval($_spawn_id) && ! empty($this->threads[intval($_spawn_id)]))
+        $_spawn_id = intval($_spawn_id);
+
+		if($_spawn_id > 0 && array_key_exists($_spawn_id, $this->threads))
 		{
 			unset($this->threads[$_spawn_id]);
 			return true;
 		}
+
 		return false;
 	}
 
