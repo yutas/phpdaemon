@@ -92,8 +92,10 @@ class Master extends Thread
 					break;
 				}
 
+                $this->waitPid();
+
 				//ожидаем заданное время для получения сигнала операционной системы
-				$this->sigwait(Config::get('Daemon.master_sigwait'));
+				$this->sigwait();
 
 				//если сигнал был получен, вызываем связанную с ним функцию
 				pcntl_signal_dispatch();
@@ -179,7 +181,8 @@ class Master extends Thread
     				while($collection->getNumber() > 0)
     				{
                         static::log('"'.$name.'" collection: '.$collection->getNumber().' of child threads remaining...', Logger::L_INFO);
-    					$this->sigwait(Config::get('Daemon.master_sigwait'));
+                        $this->waitPid();
+    					$this->sigwait();
     					continue;
     				}
     			}
@@ -194,6 +197,11 @@ class Master extends Thread
         }
     }
 
+    public function sigwait($millisec = null)
+    {
+        parent::sigwait(empty($millisec) ? Config::get('Daemon.master_sigwait') : $millisec);
+    }
+
 
     /**
      * вызывается при получении SIGCHLD (когда завершается дочерний процесс)
@@ -201,7 +209,7 @@ class Master extends Thread
     public function waitPid()
     {
         //получаем pid завершившегося дочернего процесса
-        $pid = pcntl_waitpid(-1, $status, WNOHANG);
+        $pid = pcntl_waitpid(-1, $status);
         static::log("Child with pid $pid stoped working", Logger::L_TRACE);
         if ($pid > 0) {
             //удаляем этот процесс из коллекции
