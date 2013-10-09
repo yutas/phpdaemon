@@ -92,8 +92,6 @@ class Master extends Thread
 					break;
 				}
 
-                $this->waitPid();
-
 				//ожидаем заданное время для получения сигнала операционной системы
 				$this->sigwait();
 
@@ -209,8 +207,7 @@ class Master extends Thread
     public function waitPid()
     {
         //получаем pid завершившегося дочернего процесса
-        $pid = pcntl_waitpid(-1, $status);
-        if ($pid > 0) {
+        while (($pid = pcntl_waitpid(-1, $status)) > 0) {
             static::log("Child with pid $pid stoped working", Logger::L_TRACE);
             //удаляем этот процесс из коллекции
             foreach($this->child_collections as $collection) {
