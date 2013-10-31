@@ -163,7 +163,10 @@ class Daemon
     public static function restart()
     {
         static::stop();
-        sleep(1);
+        while ( ! self::check()) {
+            static::log(sprintf("Waiting for previous process (PID %d) to shutdown...", static::$pid));
+            sleep(1);
+        }
         static::start();
     }
 
@@ -186,7 +189,6 @@ class Daemon
             static::log('It seems that daemon is not running' . (static::$pid ? ' (PID ' . static::$pid . ')' : ''), Logger::L_ERROR);
             file_put_contents(static::$pidfile, '');
         }
-        static::$pid = 0;
     }
 
 
