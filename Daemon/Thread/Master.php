@@ -215,8 +215,8 @@ class Master extends Thread
 					break;
 				}
             }
-            return TRUE;
         }
+        return TRUE;
     }
 
 
