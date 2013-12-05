@@ -5,7 +5,6 @@ class Collection
 {
     public $threads = array();
     public $waitstatus;
-    public $spawncounter = 0;
 	private $child_limit = 0;
 	//TODO: органично встроить статические/динамические коллекции
 

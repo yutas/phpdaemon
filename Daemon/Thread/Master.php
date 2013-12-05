@@ -30,7 +30,7 @@ class Master extends Thread
      */
     public function start()
     {
-        if( ! Config::get('Daemon.alive'))          //если стоит флаг демонизации
+        if( ! Config::get('Daemon.alive'))          //если не стоит флаг, чтобы оставить процесс в консоли
         {
             $pid = pcntl_fork();                    //форкаем текущий процесс
             if ($pid === - 1) {
@@ -181,7 +181,6 @@ class Master extends Thread
                         static::log('"'.$name.'" collection: '.$collection->getNumber().' of child threads remaining...', Logger::L_INFO);
                         $this->waitPid();
     					$this->sigwait();
-    					continue;
     				}
     			}
     		}
@@ -207,7 +206,7 @@ class Master extends Thread
     public function waitPid()
     {
         //получаем pid завершившегося дочернего процесса
-        while (($pid = pcntl_waitpid(-1, $status)) > 0) {
+        while (($pid = pcntl_waitpid(-1, $status, WNOHANG | WUNTRACED)) > 0) {
             static::log("Child with pid $pid stoped working", Logger::L_TRACE);
             //удаляем этот процесс из коллекции
             foreach($this->child_collections as $collection) {
