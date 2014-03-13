@@ -12,6 +12,7 @@ class Child extends Thread
     protected $before_function = FALSE;
     protected $after_function = FALSE;
     protected $onshutdown_function = FALSE;
+    protected $start_time;
 
     /**
      * @method run
@@ -25,12 +26,12 @@ class Child extends Thread
             proc_nice($this->priority);
             gc_enable();
 
+            $this->start_time = microtime(true);
             call_user_func([$this->appl, 'baseOnRun']);
 
             while (TRUE) {
 
-                if(TRUE === call_user_func([$this->appl, 'baseRun']))
-                {
+                if(TRUE === call_user_func([$this->appl, 'baseRun']) || $this->isItTimeToDie()) {
                     break;
                 }
                 //ожидаем заданное время для получения сигнала операционной системы
@@ -75,5 +76,10 @@ class Child extends Thread
     public function onShutdown()
     {
 		call_user_func([$this->appl, 'baseOnShutdown']);
+    }
+
+    protected function isItTimeToDie()
+    {
+        return (microtime(true) - $this->start_time) > Config::get('Daemon.child_ttl');
     }
 }

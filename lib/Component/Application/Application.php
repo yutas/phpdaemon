@@ -1,8 +1,7 @@
 <?php
+
 namespace Daemon\Component\Application;
 
-use Daemon\Daemon;
-use Daemon\Utils\Config;
 use Daemon\Thread\Master;
 use Daemon\Utils\LogTrait;
 use Daemon\Utils\ExceptionTrait;

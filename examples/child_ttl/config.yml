@@ -1,0 +1,61 @@
+#Единый конфигурационный файл демона и приложения
+---
+Daemon:
+  name: example
+  alive: false                  #запустить в терминале (не демонизировать)
+  master_sigwait: 1000          #задержка выполнения runtime master-процесса для ожидания управляющих сигналов операционной системы (миллисекунды)
+  child_sigwait: 100            #задержка выполнения runtime дочернего процесса для ожидания управляющих сигналов операционной системы (миллисекунды)
+  child_ttl: 10                 # время жизни дочернего процесса (секунды)
+  pid_dir: pids                 #папка для хранения pid-файла (относительно project_root)
+  show_php_errors: false        #вывод ошибок php
+
+Application:
+  max_child_count: 1
+
+Logger:
+  log_dir: logs                 #папка для хранения файла логов (относительно project_root)
+  to_stderr: false              #выводить сообщения в STDERR
+  verbose: Logger::L_ERROR      #степерь подробности логирования
+
+Flags:
+  help: false
+  config: false
+  force: false
+
+
+
+
+# Алиасы для управления демоном через командную строку (также используются для вывода сообщения помощи)
+# однобуквенные параметры передаются с одним дефисом со значением через пробел: -s 10 (опущенное значение считается TRUE по-умолчанию)
+# многобуквенные параметры - с двумя дефисами со значением через знак равно: --param=10 (опущенное значение считается TRUE по-умолчанию)
+Aliases:
+  h:
+    path: Flags.help
+    help: " \t\t- print this message and exit"
+  c:
+    path: Flags.config
+    help: " <path> \t- path to config file"
+  f:
+    path: Flags.force
+    help: " \t\t- force to stop"
+  a:
+    path: Daemon.alive
+    help: " \t\t- Keep daemon alive (don't daemonize)"
+  o:
+    path: Logger.to_stderr
+    help: " \t\t- output logs to STDERR"
+  v:
+    path: Logger.verbose
+    help: " \t\t- verbose daemon logs"
+  s:
+    path: Daemon.master_sigwait
+    help: " <number> \t- master sigwait time (in milliseconds)"
+  p:
+    path: Daemon.pid_dir
+    help: " <path> \t- directory for pid file"
+  l:
+    path: Logger.log_dir
+    help: " <path> \t- directory for log file"
+  e:
+    path: Daemon.show_php_errors
+    help: " <path> \t- show php errors"

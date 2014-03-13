@@ -2,7 +2,6 @@
 namespace Daemon\Examples;
 
 use Daemon\Component\Application\Application;
-use Daemon\Utils\Config;
 use Daemon\Component\Socket;
 use Daemon\Component\Intercom;
 use Daemon\Component\Intercom\Message as IntercomMessage;
