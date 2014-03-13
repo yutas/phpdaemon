@@ -14,6 +14,6 @@
         "ext-posix": "*"
     },
     "autoload": {
-        "psr-0": { "Daemon\\": "lib/" }
+        "psr-0": { "Daemon\\": "" }
     }
 }
